@@ -15,11 +15,11 @@ public class Customer {
     private String accountNumber;
     private String ifscCode;
     private String bankName;
-    private String kycStatus;
+    private KycStatus kycStatus;
     private String kycRemarks;
     private int kycVerifiedBy;
     private String kycVerifiedAt;
     private int creditScore;
     private double existingEmi;
-    private String status;
+    private CustomerStatus status;
 }
