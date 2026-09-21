@@ -1,0 +1,253 @@
+[1mdiff --git a/src/main/java/com/loanmanagement/dao/impl/UserDaoImpl.java b/src/main/java/com/loanmanagement/dao/impl/UserDaoImpl.java[m
+[1mindex ba5c8c7..fcdeedd 100644[m
+[1m--- a/src/main/java/com/loanmanagement/dao/impl/UserDaoImpl.java[m
+[1m+++ b/src/main/java/com/loanmanagement/dao/impl/UserDaoImpl.java[m
+[36m@@ -2,25 +2,107 @@[m [mpackage com.loanmanagement.dao.impl;[m
+ [m
+ import com.loanmanagement.dao.UserDao;[m
+ import com.loanmanagement.model.User;[m
+[32m+[m[32mimport com.loanmanagement.util.DBConnection;[m
+[32m+[m
+[32m+[m[32mimport java.sql.Connection;[m
+[32m+[m[32mimport java.sql.PreparedStatement;[m
+[32m+[m[32mimport java.sql.ResultSet;[m
+[32m+[m[32mimport java.sql.SQLException;[m
+ [m
+ public class UserDaoImpl implements UserDao {[m
+     @Override[m
+     public void addUser(User user) {[m
+[32m+[m[32m        String sql= """[m
+[32m+[m[32m                insert into users[m
+[32m+[m[32m                (username, password_hash, role, status, created_at)[m
+[32m+[m[32m                values(?,?,?,?,?)[m
+[32m+[m[32m                """;[m
+[32m+[m[32m        try(Connection connection=DBConnection.getConnection();[m
+[32m+[m[32m        PreparedStatement preparedStatement=connection.prepareStatement(sql)){[m
+[32m+[m[32m            preparedStatement.setString(1, user.getUsername());[m
+[32m+[m[32m            preparedStatement.setString(2, user.getPasswordHash());[m
+[32m+[m[32m            preparedStatement.setString(3, user.getRole());[m
+[32m+[m[32m            preparedStatement.setString(4, user.getStatus());[m
+[32m+[m[32m            preparedStatement.setString(5, user.getCreatedAt());[m
+[32m+[m[32m            preparedStatement.executeUpdate();[m
+[32m+[m
+[32m+[m[32m            System.out.println("User added successfully.");[m
+ [m
+[32m+[m[32m    }catch(SQLException e){[m
+[32m+[m[32m        e.printStackTrace();[m
+     }[m
+[32m+[m[32m}[m
+ [m
+     @Override[m
+     public User getUserById(int userId) {[m
+[32m+[m[32m        String sql = """[m
+[32m+[m[32m                select user_id,username,password_hash,role,status,created_at[m
+[32m+[m[32m                from users[m
+[32m+[m[32m                where user_id=?[m
+[32m+[m[32m                """;[m
+[32m+[m[32m        try (Connection connection = DBConnection.getConnection();[m
+[32m+[m[32m             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {[m
+[32m+[m[32m            preparedStatement.setInt(1, userId);[m
+[32m+[m[32m            ResultSet resultSet = preparedStatement.executeQuery();[m
+[32m+[m[32m            if (resultSet.next()) {[m
+[32m+[m[32m                return new User([m
+[32m+[m[32m                        resultSet.getInt("user_id"),[m
+[32m+[m[32m                        resultSet.getString("username"),[m
+[32m+[m[32m                        resultSet.getString("password_hash"),[m
+[32m+[m[32m                        resultSet.getString("role"),[m
+[32m+[m[32m                        resultSet.getString("status"),[m
+[32m+[m[32m                        resultSet.getString("created_at")[m
+[32m+[m[32m                );[m
+[32m+[m[32m            }[m
+[32m+[m[32m        } catch (SQLException e) {[m
+[32m+[m[32m            e.printStackTrace();[m
+[32m+[m[32m        }[m
+[32m+[m
+         return null;[m
+     }[m
+ [m
+[32m+[m
+     @Override[m
+     public void updateUser(User user) {[m
+[32m+[m[32m        String sql= """[m
+[32m+[m[32m                update users set username=?,[m
+[32m+[m[32m                                 password_hash=?,[m
+[32m+[m[32m                                 role=?,[m
+[32m+[m[32m                                 status=?,[m
+[32m+[m[32m                                 created_at=?[m
+[32m+[m[32m                        where user_id=?[m
+[32m+[m[32m                """;[m
+[32m+[m[32m        try(Connection connection=DBConnection.getConnection();[m
+[32m+[m[32m        PreparedStatement preparedStatement=connection.prepareStatement(sql)){[m
+[32m+[m[32m            preparedStatement.setString(1, user.getUsername());[m
+[32m+[m[32m            preparedStatement.setString(2,user.getPasswordHash());[m
+[32m+[m[32m            preparedStatement.setString(3,user.getRole());[m
+[32m+[m[32m            preparedStatement.setString(4,user.getStatus());[m
+[32m+[m[32m            preparedStatement.setString(5,user.getCreatedAt());[m
+[32m+[m
+[32m+[m[32m            preparedStatement.setInt(6,user.getUserId());[m
+[32m+[m
+[32m+[m[32m            int rowsAffected = preparedStatement.executeUpdate();[m
+[32m+[m[32m            System.out.println(rowsAffected+ " user(s) updated.");[m
+[32m+[m[32m        }catch (SQLException e){[m
+[32m+[m[32m            e.printStackTrace();[m
+[32m+[m[32m        }[m
+ [m
+     }[m
+ [m
+     @Override[m
+     public void deleteUser(int userId) {[m
+[32m+[m[32m        String sql= """[m
+[32m+[m[32m                delete from users where user_id =?[m
+[32m+[m[32m                """;[m
+[32m+[m[32m        try(Connection connection=DBConnection.getConnection();[m
+[32m+[m[32m        PreparedStatement preparedStatement=connection.prepareStatement(sql)){[m
+[32m+[m[32m            preparedStatement.setInt(1, userId);[m
+ [m
+[32m+[m[32m            int rowsAffected=preparedStatement.executeUpdate();[m
+[32m+[m[32m            System.out.println(rowsAffected+" user(s) deleted.");[m
+[32m+[m[32m        }catch (SQLException e){[m
+[32m+[m[32m            e.printStackTrace();[m
+[32m+[m[32m        }[m
+     }[m
+ }[m
+[1mdiff --git a/src/main/java/com/loanmanagement/model/User.java b/src/main/java/com/loanmanagement/model/User.java[m
+[1mindex 6873ed7..d27ecee 100644[m
+[1m--- a/src/main/java/com/loanmanagement/model/User.java[m
+[1m+++ b/src/main/java/com/loanmanagement/model/User.java[m
+[36m@@ -7,4 +7,61 @@[m [mpublic class User {[m
+     private String role;[m
+     private String status;[m
+     private String createdAt;[m
+[32m+[m
+[32m+[m[32m    public User(int userId, String username, String passwordHash, String role, String status, String createdAt) {[m
+[32m+[m[32m        this.userId = userId;[m
+[32m+[m[32m        this.username = username;[m
+[32m+[m[32m        this.passwordHash = passwordHash;[m
+[32m+[m[32m        this.role = role;[m
+[32m+[m[32m        this.status = status;[m
+[32m+[m[32m        this.createdAt = createdAt;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public int getUserId() {[m
+[32m+[m[32m        return userId;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getUsername() {[m
+[32m+[m[32m        return username;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getPasswordHash() {[m
+[32m+[m[32m        return passwordHash;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getRole() {[m
+[32m+[m[32m        return role;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getStatus() {[m
+[32m+[m[32m        return status;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public String getCreatedAt() {[m
+[32m+[m[32m        return createdAt;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setUserId(int userId) {[m
+[32m+[m[32m        this.userId = userId;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setUsername(String username) {[m
+[32m+[m[32m        this.username = username;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setPasswordHash(String passwordHash) {[m
+[32m+[m[32m        this.passwordHash = passwordHash;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setRole(String role) {[m
+[32m+[m[32m        this.role = role;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setStatus(String status) {[m
+[32m+[m[32m        this.status = status;[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public void setCreatedAt(String createdAt) {[m
+[32m+[m[32m        this.createdAt = createdAt;[m
+[32m+[m[32m    }[m
+ }[m
+[1mdiff --git a/src/main/java/com/loanmanagement/service/impl/UserServiceImpl.java b/src/main/java/com/loanmanagement/service/impl/UserServiceImpl.java[m
+[1mindex f6862f6..e704589 100644[m
+[1m--- a/src/main/java/com/loanmanagement/service/impl/UserServiceImpl.java[m
+[1m+++ b/src/main/java/com/loanmanagement/service/impl/UserServiceImpl.java[m
+[36m@@ -1,26 +1,31 @@[m
+ package com.loanmanagement.service.impl;[m
+ [m
+[32m+[m[32mimport com.loanmanagement.dao.UserDao;[m
+[32m+[m[32mimport com.loanmanagement.dao.impl.UserDaoImpl;[m
+ import com.loanmanagement.model.User;[m
+ import com.loanmanagement.service.UserService;[m
+ [m
+ public class UserServiceImpl implements UserService {[m
+[32m+[m
+[32m+[m[32m    private UserDao userDao = new UserDaoImpl();[m
+[32m+[m
+     @Override[m
+     public void addUser(User user) {[m
+[31m-[m
+[32m+[m[32m        userDao.addUser(user);[m
+     }[m
+ [m
+     @Override[m
+     public User getUserById(int userId) {[m
+[31m-        return null;[m
+[32m+[m[32m        return userDao.getUserById(userId);[m
+     }[m
+ [m
+     @Override[m
+     public void updateUser(User user) {[m
+[31m-[m
+[32m+[m[32m        userDao.updateUser(user);[m
+     }[m
+ [m
+     @Override[m
+     public void deleteUser(int userId) {[m
+[31m-[m
+[32m+[m[32m        userDao.deleteUser(userId);[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/src/main/java/org/example/Main.java b/src/main/java/org/example/Main.java[m
+[1mindex 1bb4bf0..d7f36dd 100644[m
+[1m--- a/src/main/java/org/example/Main.java[m
+[1m+++ b/src/main/java/org/example/Main.java[m
+[36m@@ -1,17 +1,15 @@[m
+ package org.example;[m
+[32m+[m[32mimport com.loanmanagement.dao.UserDao;[m
+[32m+[m[32mimport com.loanmanagement.dao.impl.UserDaoImpl;[m
+[32m+[m[32mimport com.loanmanagement.model.User;[m
+ [m
+[31m-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or[m
+[31m-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.[m
+ public class Main {[m
+[31m-    static void main() {[m
+[31m-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text[m
+[31m-        // to see how IntelliJ IDEA suggests fixing it.[m
+[31m-        IO.println(String.format("Hello and welcome!"));[m
+ [m
+[31m-        for (int i = 1; i <= 5; i++) {[m
+[31m-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint[m
+[31m-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.[m
+[31m-            IO.println("i = " + i);[m
+[31m-        }[m
+[32m+[m[32m    public static void main(String[] args) {[m
+[32m+[m
+[32m+[m
+[32m+[m[32m        UserDao userDao = new UserDaoImpl();[m
+[32m+[m
+[32m+[m[32m        userDao.deleteUser(1);[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
