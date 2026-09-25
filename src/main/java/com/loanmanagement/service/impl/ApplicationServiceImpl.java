@@ -7,26 +7,30 @@ import com.loanmanagement.service.ApplicationService;
 
 public class ApplicationServiceImpl implements ApplicationService {
 
-    private LoanApplicationDao loanApplicationDao =
+    private final LoanApplicationDao loanApplicationDao =
             new LoanApplicationDaoImpl();
 
     @Override
-    public void addApplication(LoanApplication application) {
-        loanApplicationDao.addLoanApplication(application);
+    public int addApplication(LoanApplication application) {
+
+        return loanApplicationDao.addLoanApplication(application);
     }
 
     @Override
     public LoanApplication getApplicationById(int applicationId) {
+
         return loanApplicationDao.getLoanApplicationById(applicationId);
     }
 
     @Override
-    public void updateApplication(LoanApplication application) {
-        loanApplicationDao.updateLoanApplication(application);
+    public int updateApplication(LoanApplication application) {
+
+        return loanApplicationDao.updateLoanApplication(application);
     }
 
     @Override
-    public void deleteApplication(int applicationId) {
-        loanApplicationDao.deleteLoanApplication(applicationId);
+    public int deleteApplication(int applicationId) {
+
+        return loanApplicationDao.deleteLoanApplication(applicationId);
     }
 }

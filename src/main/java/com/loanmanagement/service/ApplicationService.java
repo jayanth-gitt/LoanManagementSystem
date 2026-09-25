@@ -3,11 +3,11 @@ package com.loanmanagement.service;
 import com.loanmanagement.model.LoanApplication;
 
 public interface ApplicationService {
-    void addApplication(LoanApplication application);
+    int addApplication(LoanApplication application);
 
     LoanApplication getApplicationById(int applicationId);
 
-    void updateApplication(LoanApplication application);
+    int updateApplication(LoanApplication application);
 
-    void deleteApplication(int applicationId);
+    int deleteApplication(int applicationId);
 }

@@ -3,11 +3,12 @@ package com.loanmanagement.dao;
 import com.loanmanagement.model.LoanApplication;
 
 public interface LoanApplicationDao {
-    void addLoanApplication(LoanApplication application);
+
+    int addLoanApplication(LoanApplication application);
 
     LoanApplication getLoanApplicationById(int applicationId);
 
-    void updateLoanApplication(LoanApplication application);
+    int updateLoanApplication(LoanApplication application);
 
-    void deleteLoanApplication(int applicationId);
+    int deleteLoanApplication(int applicationId);
 }

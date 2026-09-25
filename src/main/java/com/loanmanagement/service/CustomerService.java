@@ -3,11 +3,12 @@ package com.loanmanagement.service;
 import com.loanmanagement.model.Customer;
 
 public interface CustomerService {
-    void addCustomer(Customer customer);
+
+    int addCustomer(Customer customer);
 
     Customer getCustomerById(int customerId);
 
-    void updateCustomer(Customer customer);
+    int updateCustomer(Customer customer);
 
-    void deleteCustomer(int customerId);
+    int deleteCustomer(int customerId);
 }

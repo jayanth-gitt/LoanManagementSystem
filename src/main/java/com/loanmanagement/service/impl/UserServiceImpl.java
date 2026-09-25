@@ -7,11 +7,11 @@ import com.loanmanagement.service.UserService;
 
 public class UserServiceImpl implements UserService {
 
-    private UserDao userDao = new UserDaoImpl();
+    private final UserDao userDao = new UserDaoImpl();
 
     @Override
-    public void addUser(User user) {
-        userDao.addUser(user);
+    public int addUser(User user) {
+        return userDao.addUser(user);
     }
 
     @Override
@@ -20,12 +20,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void updateUser(User user) {
-        userDao.updateUser(user);
+    public int updateUser(User user) {
+        return userDao.updateUser(user);
     }
 
     @Override
-    public void deleteUser(int userId) {
-        userDao.deleteUser(userId);
+    public int deleteUser(int userId) {
+        return userDao.deleteUser(userId);
     }
 }

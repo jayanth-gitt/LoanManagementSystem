@@ -7,11 +7,11 @@ import com.loanmanagement.service.LoanService;
 
 public class LoanServiceImpl implements LoanService {
 
-    private LoanDao loanDao = new LoanDaoImpl();
+    private final LoanDao loanDao = new LoanDaoImpl();
 
     @Override
-    public void addLoan(Loan loan) {
-        loanDao.addLoan(loan);
+    public int addLoan(Loan loan) {
+        return loanDao.addLoan(loan);
     }
 
     @Override
@@ -20,12 +20,12 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public void updateLoan(Loan loan) {
-        loanDao.updateLoan(loan);
+    public int updateLoan(Loan loan) {
+        return loanDao.updateLoan(loan);
     }
 
     @Override
-    public void deleteLoan(int loanId) {
-        loanDao.deleteLoan(loanId);
+    public int deleteLoan(int loanId) {
+        return loanDao.deleteLoan(loanId);
     }
 }

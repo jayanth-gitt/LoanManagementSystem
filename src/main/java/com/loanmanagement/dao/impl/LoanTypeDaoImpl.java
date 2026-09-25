@@ -4,6 +4,9 @@ import com.loanmanagement.dao.LoanTypeDao;
 import com.loanmanagement.model.LoanType;
 import com.loanmanagement.util.DBConnection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -11,141 +14,316 @@ import java.sql.SQLException;
 
 public class LoanTypeDaoImpl implements LoanTypeDao {
 
-    @Override
-    public void addLoanType(LoanType loanType) {
+    private static final Logger logger =
+            LoggerFactory.getLogger(LoanTypeDaoImpl.class);
 
-        String sql = """
-                INSERT INTO loan_types
-                (name, description, min_amount, max_amount,
-                 interest_rate, max_tenure_months, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
+    public static final String INSERT_LOAN_TYPE_SQL = """
+            INSERT INTO loan_types
+            (name, description, min_amount, max_amount,
+             interest_rate, max_tenure_months, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
+
+    public static final String SELECT_LOAN_TYPE_BY_ID_SQL = """
+            SELECT *
+            FROM loan_types
+            WHERE loan_type_id = ?
+            """;
+
+    public static final String UPDATE_LOAN_TYPE_SQL = """
+            UPDATE loan_types
+            SET
+                name = ?,
+                description = ?,
+                min_amount = ?,
+                max_amount = ?,
+                interest_rate = ?,
+                max_tenure_months = ?,
+                status = ?
+            WHERE loan_type_id = ?
+            """;
+
+    public static final String DELETE_LOAN_TYPE_SQL = """
+            DELETE FROM loan_types
+            WHERE loan_type_id = ?
+            """;
+
+    @Override
+    public int addLoanType(LoanType loanType) {
+
+        logger.info(
+                "Adding loan type: {}",
+                loanType.getName()
+        );
 
         try (
                 Connection connection = DBConnection.getConnection();
                 PreparedStatement preparedStatement =
-                        connection.prepareStatement(sql)
+                        connection.prepareStatement(INSERT_LOAN_TYPE_SQL)
         ) {
 
-            preparedStatement.setString(1, loanType.getName());
-            preparedStatement.setString(2, loanType.getDescription());
-            preparedStatement.setDouble(3, loanType.getMinAmount());
-            preparedStatement.setDouble(4, loanType.getMaxAmount());
-            preparedStatement.setDouble(5, loanType.getInterestRate());
-            preparedStatement.setInt(6, loanType.getMaxTenureMonths());
-            preparedStatement.setString(7, loanType.getStatus());
+            preparedStatement.setString(
+                    1,
+                    loanType.getName()
+            );
 
-            preparedStatement.executeUpdate();
+            preparedStatement.setString(
+                    2,
+                    loanType.getDescription()
+            );
 
-            System.out.println("Loan type added successfully.");
+            preparedStatement.setDouble(
+                    3,
+                    loanType.getMinAmount()
+            );
+
+            preparedStatement.setDouble(
+                    4,
+                    loanType.getMaxAmount()
+            );
+
+            preparedStatement.setDouble(
+                    5,
+                    loanType.getInterestRate()
+            );
+
+            preparedStatement.setInt(
+                    6,
+                    loanType.getMaxTenureMonths()
+            );
+
+            preparedStatement.setString(
+                    7,
+                    loanType.getStatus()
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            logger.info(
+                    "Loan type '{}' added successfully. Rows affected: {}",
+                    loanType.getName(),
+                    rowsAffected
+            );
+
+            return rowsAffected;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+
+            logger.error(
+                    "Error while adding loan type: {}",
+                    loanType.getName(),
+                    e
+            );
+
+            return 0;
         }
     }
 
     @Override
     public LoanType getLoanTypeById(int loanTypeId) {
 
-        String sql = """
-                SELECT *
-                FROM loan_types
-                WHERE loan_type_id = ?
-                """;
+        logger.info(
+                "Fetching loan type with ID: {}",
+                loanTypeId
+        );
 
         try (
                 Connection connection = DBConnection.getConnection();
                 PreparedStatement preparedStatement =
-                        connection.prepareStatement(sql)
+                        connection.prepareStatement(
+                                SELECT_LOAN_TYPE_BY_ID_SQL
+                        )
         ) {
 
-            preparedStatement.setInt(1, loanTypeId);
+            preparedStatement.setInt(
+                    1,
+                    loanTypeId
+            );
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+            try (ResultSet resultSet =
+                         preparedStatement.executeQuery()) {
 
-            if (resultSet.next()) {
+                if (resultSet.next()) {
 
-                return new LoanType(
-                        resultSet.getInt("loan_type_id"),
-                        resultSet.getString("name"),
-                        resultSet.getString("description"),
-                        resultSet.getDouble("min_amount"),
-                        resultSet.getDouble("max_amount"),
-                        resultSet.getDouble("interest_rate"),
-                        resultSet.getInt("max_tenure_months"),
-                        resultSet.getString("status")
-                );
+                    LoanType loanType =
+                            new LoanType(
+                                    resultSet.getInt("loan_type_id"),
+                                    resultSet.getString("name"),
+                                    resultSet.getString("description"),
+                                    resultSet.getDouble("min_amount"),
+                                    resultSet.getDouble("max_amount"),
+                                    resultSet.getDouble("interest_rate"),
+                                    resultSet.getInt("max_tenure_months"),
+                                    resultSet.getString("status")
+                            );
+
+                    logger.info(
+                            "Loan type found with ID: {}",
+                            loanTypeId
+                    );
+
+                    return loanType;
+                }
             }
 
+            logger.warn(
+                    "No loan type found with ID: {}",
+                    loanTypeId
+            );
+
         } catch (SQLException e) {
-            e.printStackTrace();
+
+            logger.error(
+                    "Error while fetching loan type with ID: {}",
+                    loanTypeId,
+                    e
+            );
         }
 
         return null;
     }
 
     @Override
-    public void updateLoanType(LoanType loanType) {
+    public int updateLoanType(LoanType loanType) {
 
-        String sql = """
-                UPDATE loan_types
-                SET
-                    name = ?,
-                    description = ?,
-                    min_amount = ?,
-                    max_amount = ?,
-                    interest_rate = ?,
-                    max_tenure_months = ?,
-                    status = ?
-                WHERE loan_type_id = ?
-                """;
+        logger.info(
+                "Updating loan type with ID: {}",
+                loanType.getLoanTypeId()
+        );
 
         try (
                 Connection connection = DBConnection.getConnection();
                 PreparedStatement preparedStatement =
-                        connection.prepareStatement(sql)
+                        connection.prepareStatement(
+                                UPDATE_LOAN_TYPE_SQL
+                        )
         ) {
 
-            preparedStatement.setString(1, loanType.getName());
-            preparedStatement.setString(2, loanType.getDescription());
-            preparedStatement.setDouble(3, loanType.getMinAmount());
-            preparedStatement.setDouble(4, loanType.getMaxAmount());
-            preparedStatement.setDouble(5, loanType.getInterestRate());
-            preparedStatement.setInt(6, loanType.getMaxTenureMonths());
-            preparedStatement.setString(7, loanType.getStatus());
-            preparedStatement.setInt(8, loanType.getLoanTypeId());
+            preparedStatement.setString(
+                    1,
+                    loanType.getName()
+            );
 
-            int rowsAffected = preparedStatement.executeUpdate();
+            preparedStatement.setString(
+                    2,
+                    loanType.getDescription()
+            );
 
-            System.out.println(rowsAffected + " loan type(s) updated.");
+            preparedStatement.setDouble(
+                    3,
+                    loanType.getMinAmount()
+            );
+
+            preparedStatement.setDouble(
+                    4,
+                    loanType.getMaxAmount()
+            );
+
+            preparedStatement.setDouble(
+                    5,
+                    loanType.getInterestRate()
+            );
+
+            preparedStatement.setInt(
+                    6,
+                    loanType.getMaxTenureMonths()
+            );
+
+            preparedStatement.setString(
+                    7,
+                    loanType.getStatus()
+            );
+
+            preparedStatement.setInt(
+                    8,
+                    loanType.getLoanTypeId()
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+
+                logger.info(
+                        "Loan type with ID {} updated successfully. Rows affected: {}",
+                        loanType.getLoanTypeId(),
+                        rowsAffected
+                );
+
+            } else {
+
+                logger.warn(
+                        "No loan type found to update with ID: {}",
+                        loanType.getLoanTypeId()
+                );
+            }
+
+            return rowsAffected;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+
+            logger.error(
+                    "Error while updating loan type with ID: {}",
+                    loanType.getLoanTypeId(),
+                    e
+            );
+
+            return 0;
         }
     }
 
     @Override
-    public void deleteLoanType(int loanTypeId) {
+    public int deleteLoanType(int loanTypeId) {
 
-        String sql = """
-                DELETE FROM loan_types
-                WHERE loan_type_id = ?
-                """;
+        logger.info(
+                "Deleting loan type with ID: {}",
+                loanTypeId
+        );
 
         try (
                 Connection connection = DBConnection.getConnection();
                 PreparedStatement preparedStatement =
-                        connection.prepareStatement(sql)
+                        connection.prepareStatement(
+                                DELETE_LOAN_TYPE_SQL
+                        )
         ) {
 
-            preparedStatement.setInt(1, loanTypeId);
+            preparedStatement.setInt(
+                    1,
+                    loanTypeId
+            );
 
-            int rowsAffected = preparedStatement.executeUpdate();
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
 
-            System.out.println(rowsAffected + " loan type(s) deleted.");
+            if (rowsAffected > 0) {
+
+                logger.info(
+                        "Loan type with ID {} deleted successfully. Rows affected: {}",
+                        loanTypeId,
+                        rowsAffected
+                );
+
+            } else {
+
+                logger.warn(
+                        "No loan type found to delete with ID: {}",
+                        loanTypeId
+                );
+            }
+
+            return rowsAffected;
 
         } catch (SQLException e) {
-            e.printStackTrace();
+
+            logger.error(
+                    "Error while deleting loan type with ID: {}",
+                    loanTypeId,
+                    e
+            );
+
+            return 0;
         }
     }
 }

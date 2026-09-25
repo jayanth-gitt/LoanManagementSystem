@@ -7,11 +7,12 @@ import com.loanmanagement.service.CustomerService;
 
 public class CustomerServiceImpl implements CustomerService {
 
-    private CustomerDao customerDao = new CustomerDaoImpl();
+    private final CustomerDao customerDao =
+            new CustomerDaoImpl();
 
     @Override
-    public void addCustomer(Customer customer) {
-        customerDao.addCustomer(customer);
+    public int addCustomer(Customer customer) {
+        return customerDao.addCustomer(customer);
     }
 
     @Override
@@ -20,12 +21,12 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public void updateCustomer(Customer customer) {
-        customerDao.updateCustomer(customer);
+    public int updateCustomer(Customer customer) {
+        return customerDao.updateCustomer(customer);
     }
 
     @Override
-    public void deleteCustomer(int customerId) {
-        customerDao.deleteCustomer(customerId);
+    public int deleteCustomer(int customerId) {
+        return customerDao.deleteCustomer(customerId);
     }
 }

@@ -5,12 +5,12 @@ import com.loanmanagement.model.User;
 public interface UserDao {
 
 
-        void addUser(User user);
+        int addUser(User user);
 
         User getUserById(int userId);
 
-        void updateUser(User user);
+        int updateUser(User user);
 
-        void deleteUser(int userId);
+        int deleteUser(int userId);
 
 }
