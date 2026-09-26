@@ -71,7 +71,7 @@ class AppControllerTest {
         }
 
         if (testApplicationId != 0) {
-            appController.deleteLoanApplication(testApplicationId);
+            appController.deleteApplication(testApplicationId);
         }
 
         if (testLoanTypeId != 0) {
@@ -97,10 +97,7 @@ class AppControllerTest {
 
         User user = createTestUser();
 
-        int result =
-                appController.addUser(user);
-
-        assertEquals(1, result);
+        appController.addUser(user);
 
         testUserId =
                 getUserIdByUsername(testUsername);
@@ -140,10 +137,7 @@ class AppControllerTest {
                 null
         );
 
-        int result =
-                appController.updateUser(updatedUser);
-
-        assertEquals(1, result);
+        appController.updateUser(updatedUser);
 
         User fetchedUser =
                 appController.getUserById(testUserId);
@@ -162,17 +156,13 @@ class AppControllerTest {
 
         addTestUser();
 
-        int result =
-                appController.deleteUser(testUserId);
-
-        assertEquals(1, result);
+        appController.deleteUser(testUserId);
 
         User deletedUser =
                 appController.getUserById(testUserId);
 
         assertNull(deletedUser);
 
-        // Prevent @AfterEach from trying to delete it again
         testUserId = 0;
     }
 
@@ -189,10 +179,7 @@ class AppControllerTest {
         Customer customer =
                 createTestCustomer(testUserId);
 
-        int result =
-                appController.addCustomer(customer);
-
-        assertEquals(1, result);
+        appController.addCustomer(customer);
 
         testCustomerId =
                 getCustomerIdByEmail(testEmail);
@@ -234,10 +221,7 @@ class AppControllerTest {
                 "Updated JUnit Customer"
         );
 
-        int result =
-                appController.updateCustomer(customer);
-
-        assertEquals(1, result);
+        appController.updateCustomer(customer);
 
         Customer updatedCustomer =
                 appController.getCustomerById(
@@ -258,12 +242,9 @@ class AppControllerTest {
 
         addTestCustomer();
 
-        int result =
-                appController.deleteCustomer(
-                        testCustomerId
-                );
-
-        assertEquals(1, result);
+        appController.deleteCustomer(
+                testCustomerId
+        );
 
         Customer deletedCustomer =
                 appController.getCustomerById(
@@ -286,10 +267,7 @@ class AppControllerTest {
         LoanType loanType =
                 createTestLoanType();
 
-        int result =
-                appController.addLoanType(loanType);
-
-        assertEquals(1, result);
+        appController.addLoanType(loanType);
 
         testLoanTypeId =
                 getLoanTypeIdByName(
@@ -335,12 +313,9 @@ class AppControllerTest {
                 testLoanTypeName + " Updated"
         );
 
-        int result =
-                appController.updateLoanType(
-                        loanType
-                );
-
-        assertEquals(1, result);
+        appController.updateLoanType(
+                loanType
+        );
 
         LoanType updatedLoanType =
                 appController.getLoanTypeById(
@@ -361,12 +336,9 @@ class AppControllerTest {
 
         addTestLoanType();
 
-        int result =
-                appController.deleteLoanType(
-                        testLoanTypeId
-                );
-
-        assertEquals(1, result);
+        appController.deleteLoanType(
+                testLoanTypeId
+        );
 
         LoanType deletedLoanType =
                 appController.getLoanTypeById(
@@ -384,7 +356,7 @@ class AppControllerTest {
     // ============================================================
 
     @Test
-    void addLoanApplication() {
+    void addApplication() {
 
         addTestCustomer();
         addTestLoanType();
@@ -396,12 +368,9 @@ class AppControllerTest {
                         testUserId
                 );
 
-        int result =
-                appController.addLoanApplication(
-                        application
-                );
-
-        assertEquals(1, result);
+        appController.addApplication(
+                application
+        );
 
         testApplicationId =
                 getLoanApplicationId(
@@ -414,12 +383,12 @@ class AppControllerTest {
 
 
     @Test
-    void getLoanApplicationById() {
+    void getApplicationById() {
 
         addTestLoanApplication();
 
         LoanApplication result =
-                appController.getLoanApplicationById(
+                appController.getApplicationById(
                         testApplicationId
                 );
 
@@ -438,7 +407,7 @@ class AppControllerTest {
 
 
     @Test
-    void updateLoanApplication() {
+    void updateApplication() {
 
         addTestLoanApplication();
 
@@ -457,15 +426,12 @@ class AppControllerTest {
                 "Updated JUnit Purpose"
         );
 
-        int result =
-                appController.updateLoanApplication(
-                        application
-                );
-
-        assertEquals(1, result);
+        appController.updateApplication(
+                application
+        );
 
         LoanApplication updatedApplication =
-                appController.getLoanApplicationById(
+                appController.getApplicationById(
                         testApplicationId
                 );
 
@@ -479,19 +445,16 @@ class AppControllerTest {
 
 
     @Test
-    void deleteLoanApplication() {
+    void deleteApplication() {
 
         addTestLoanApplication();
 
-        int result =
-                appController.deleteLoanApplication(
-                        testApplicationId
-                );
-
-        assertEquals(1, result);
+        appController.deleteApplication(
+                testApplicationId
+        );
 
         LoanApplication deletedApplication =
-                appController.getLoanApplicationById(
+                appController.getApplicationById(
                         testApplicationId
                 );
 
@@ -517,10 +480,7 @@ class AppControllerTest {
                         testLoanTypeId
                 );
 
-        int result =
-                appController.addLoan(loan);
-
-        assertEquals(1, result);
+        appController.addLoan(loan);
 
         testLoanId =
                 getLoanIdByApplicationId(
@@ -573,10 +533,7 @@ class AppControllerTest {
                 150000.0
         );
 
-        int result =
-                appController.updateLoan(loan);
-
-        assertEquals(1, result);
+        appController.updateLoan(loan);
 
         Loan updatedLoan =
                 appController.getLoanById(
@@ -597,12 +554,9 @@ class AppControllerTest {
 
         addTestLoan();
 
-        int result =
-                appController.deleteLoan(
-                        testLoanId
-                );
-
-        assertEquals(1, result);
+        appController.deleteLoan(
+                testLoanId
+        );
 
         Loan deletedLoan =
                 appController.getLoanById(
@@ -668,20 +622,10 @@ class AppControllerTest {
                 0,
                 testLoanTypeName,
                 "JUnit Test Loan",
-
-                // interestRate
                 10.5,
-
-                // minAmount
                 50000.0,
-
-                // maxAmount
                 500000.0,
-
-                // maxTenureMonths
                 60,
-
-                // status
                 "ACTIVE"
         );
     }
@@ -740,10 +684,7 @@ class AppControllerTest {
 
         User user = createTestUser();
 
-        int result =
-                appController.addUser(user);
-
-        assertEquals(1, result);
+        appController.addUser(user);
 
         testUserId =
                 getUserIdByUsername(testUsername);
@@ -759,10 +700,7 @@ class AppControllerTest {
         Customer customer =
                 createTestCustomer(testUserId);
 
-        int result =
-                appController.addCustomer(customer);
-
-        assertEquals(1, result);
+        appController.addCustomer(customer);
 
         testCustomerId =
                 getCustomerIdByEmail(testEmail);
@@ -776,10 +714,7 @@ class AppControllerTest {
         LoanType loanType =
                 createTestLoanType();
 
-        int result =
-                appController.addLoanType(loanType);
-
-        assertEquals(1, result);
+        appController.addLoanType(loanType);
 
         testLoanTypeId =
                 getLoanTypeIdByName(
@@ -802,12 +737,9 @@ class AppControllerTest {
                         testUserId
                 );
 
-        int result =
-                appController.addLoanApplication(
-                        application
-                );
-
-        assertEquals(1, result);
+        appController.addApplication(
+                application
+        );
 
         testApplicationId =
                 getLoanApplicationId(
@@ -830,10 +762,7 @@ class AppControllerTest {
                         testLoanTypeId
                 );
 
-        int result =
-                appController.addLoan(loan);
-
-        assertEquals(1, result);
+        appController.addLoan(loan);
 
         testLoanId =
                 getLoanIdByApplicationId(

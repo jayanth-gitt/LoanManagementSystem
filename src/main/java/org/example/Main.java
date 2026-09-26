@@ -1,15 +1,10 @@
 package org.example;
-import com.loanmanagement.dao.UserDao;
-import com.loanmanagement.dao.impl.UserDaoImpl;
-import com.loanmanagement.model.User;
+import com.loanmanagement.controller.AppController;
 
 public class Main {
 
     public static void main(String[] args) {
-
-
-        UserDao userDao = new UserDaoImpl();
-
-        userDao.deleteUser(1);
+        AppController appController=new AppController();
+        System.out.println("Loan Management System Started");
     }
 }

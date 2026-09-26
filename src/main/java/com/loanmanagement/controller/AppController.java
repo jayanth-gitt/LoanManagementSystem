@@ -6,96 +6,114 @@ import com.loanmanagement.model.LoanApplication;
 import com.loanmanagement.model.LoanType;
 import com.loanmanagement.model.User;
 
-import com.loanmanagement.service.ApplicationService;
+import com.loanmanagement.service.AuthService;
 import com.loanmanagement.service.CustomerService;
+import com.loanmanagement.service.LoanApplicationService;
 import com.loanmanagement.service.LoanService;
 import com.loanmanagement.service.LoanTypeService;
 import com.loanmanagement.service.UserService;
 
-import com.loanmanagement.service.impl.ApplicationServiceImpl;
+import com.loanmanagement.service.impl.AuthServiceImpl;
 import com.loanmanagement.service.impl.CustomerServiceImpl;
+import com.loanmanagement.service.impl.LoanApplicationServiceImpl;
 import com.loanmanagement.service.impl.LoanServiceImpl;
 import com.loanmanagement.service.impl.LoanTypeServiceImpl;
 import com.loanmanagement.service.impl.UserServiceImpl;
 
 public class AppController {
 
-    private final UserService userService;
-    private final CustomerService customerService;
-    private final LoanTypeService loanTypeService;
-    private final ApplicationService applicationService;
-    private final LoanService loanService;
+    private final UserService userService =
+            new UserServiceImpl();
 
-    public AppController() {
+    private final LoanTypeService loanTypeService =
+            new LoanTypeServiceImpl();
 
-        userService = new UserServiceImpl();
-        customerService = new CustomerServiceImpl();
-        loanTypeService = new LoanTypeServiceImpl();
-        applicationService = new ApplicationServiceImpl();
-        loanService = new LoanServiceImpl();
+    private final CustomerService customerService =
+            new CustomerServiceImpl();
+
+    private final LoanApplicationService loanApplicationService =
+            new LoanApplicationServiceImpl();
+
+    private final LoanService loanService =
+            new LoanServiceImpl();
+
+    private final AuthService authService =
+            new AuthServiceImpl();
+
+
+    // =========================
+    // AUTHENTICATION
+    // =========================
+
+    public boolean login(String username, String password) {
+        return authService.login(username, password);
+    }
+
+    public void logout(int userId) {
+        authService.logout(userId);
     }
 
 
     // =========================
-    // USER
+    // USER MANAGEMENT
     // =========================
 
-    public int addUser(User user) {
-        return userService.addUser(user);
+    public void addUser(User user) {
+        userService.addUser(user);
     }
 
     public User getUserById(int userId) {
         return userService.getUserById(userId);
     }
 
-    public int updateUser(User user) {
-        return userService.updateUser(user);
+    public void updateUser(User user) {
+        userService.updateUser(user);
     }
 
-    public int deleteUser(int userId) {
-        return userService.deleteUser(userId);
-    }
-
-
-    // =========================
-    // CUSTOMER
-    // =========================
-
-    public int addCustomer(Customer customer) {
-        return customerService.addCustomer(customer);
-    }
-
-    public Customer getCustomerById(int customerId) {
-        return customerService.getCustomerById(customerId);
-    }
-
-    public int updateCustomer(Customer customer) {
-        return customerService.updateCustomer(customer);
-    }
-
-    public int deleteCustomer(int customerId) {
-        return customerService.deleteCustomer(customerId);
+    public void deleteUser(int userId) {
+        userService.deleteUser(userId);
     }
 
 
     // =========================
-    // LOAN TYPE
+    // LOAN TYPE MANAGEMENT
     // =========================
 
-    public int addLoanType(LoanType loanType) {
-        return loanTypeService.addLoanType(loanType);
+    public void addLoanType(LoanType loanType) {
+        loanTypeService.addLoanType(loanType);
     }
 
     public LoanType getLoanTypeById(int loanTypeId) {
         return loanTypeService.getLoanTypeById(loanTypeId);
     }
 
-    public int updateLoanType(LoanType loanType) {
-        return loanTypeService.updateLoanType(loanType);
+    public void updateLoanType(LoanType loanType) {
+        loanTypeService.updateLoanType(loanType);
     }
 
-    public int deleteLoanType(int loanTypeId) {
-        return loanTypeService.deleteLoanType(loanTypeId);
+    public void deleteLoanType(int loanTypeId) {
+        loanTypeService.deleteLoanType(loanTypeId);
+    }
+
+
+    // =========================
+    // CUSTOMER MANAGEMENT
+    // =========================
+
+    public void addCustomer(Customer customer) {
+        customerService.addCustomer(customer);
+    }
+
+    public Customer getCustomerById(int customerId) {
+        return customerService.getCustomerById(customerId);
+    }
+
+    public void updateCustomer(Customer customer) {
+        customerService.updateCustomer(customer);
+    }
+
+    public void deleteCustomer(int customerId) {
+        customerService.deleteCustomer(customerId);
     }
 
 
@@ -103,40 +121,84 @@ public class AppController {
     // LOAN APPLICATION
     // =========================
 
-    public int addLoanApplication(LoanApplication application) {
-        return applicationService.addApplication(application);
+    public void addApplication(LoanApplication application) {
+        loanApplicationService.addApplication(application);
     }
 
-    public LoanApplication getLoanApplicationById(int applicationId) {
-        return applicationService.getApplicationById(applicationId);
+    public LoanApplication getApplicationById(int applicationId) {
+        return loanApplicationService
+                .getApplicationById(applicationId);
     }
 
-    public int updateLoanApplication(LoanApplication application) {
-        return applicationService.updateApplication(application);
+    public void approveApplication(
+            int applicationId,
+            int loanOfficerId,
+            String remarks) {
+
+        loanApplicationService.approveApplication(
+                applicationId,
+                loanOfficerId,
+                remarks
+        );
     }
 
-    public int deleteLoanApplication(int applicationId) {
-        return applicationService.deleteApplication(applicationId);
+    public void rejectApplication(
+            int applicationId,
+            int loanOfficerId,
+            String remarks) {
+
+        loanApplicationService.rejectApplication(
+                applicationId,
+                loanOfficerId,
+                remarks
+        );
+    }
+
+    public void updateApplication(
+            LoanApplication application) {
+
+        loanApplicationService
+                .updateApplication(application);
+    }
+
+    public void deleteApplication(int applicationId) {
+        loanApplicationService
+                .deleteApplication(applicationId);
     }
 
 
     // =========================
-    // LOAN
+    // LOAN MANAGEMENT
     // =========================
 
-    public int addLoan(Loan loan) {
-        return loanService.addLoan(loan);
+    public void addLoan(Loan loan) {
+        loanService.addLoan(loan);
     }
 
     public Loan getLoanById(int loanId) {
         return loanService.getLoanById(loanId);
     }
 
-    public int updateLoan(Loan loan) {
-        return loanService.updateLoan(loan);
+    public void updateLoan(Loan loan) {
+        loanService.updateLoan(loan);
     }
 
-    public int deleteLoan(int loanId) {
-        return loanService.deleteLoan(loanId);
+    public void deleteLoan(int loanId) {
+        loanService.deleteLoan(loanId);
+    }
+
+
+    // =========================
+    // MAIN
+    // =========================
+
+    public static void main(String[] args) {
+
+        AppController controller =
+                new AppController();
+
+        System.out.println(
+                "Loan Management System started successfully."
+        );
     }
 }
