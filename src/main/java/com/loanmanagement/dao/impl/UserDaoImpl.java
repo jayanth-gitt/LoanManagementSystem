@@ -19,7 +19,7 @@ public class UserDaoImpl implements UserDao {
 
     public static final String INSERT_USER_SQL = """
             INSERT INTO users
-            (username, password_hash, role, status)
+            (username, password, role, status)
             VALUES (?, ?, ?, ?)
             """;
 
@@ -33,7 +33,7 @@ public class UserDaoImpl implements UserDao {
             UPDATE users
             SET
                 username = ?,
-                password_hash = ?,
+                password = ?,
                 role = ?,
                 status = ?
             WHERE user_id = ?
@@ -56,7 +56,7 @@ public class UserDaoImpl implements UserDao {
         ) {
 
             preparedStatement.setString(1, user.getUsername());
-            preparedStatement.setString(2, user.getPasswordHash());
+            preparedStatement.setString(2, user.getPassword());
             preparedStatement.setString(3, user.getRole());
             preparedStatement.setString(4, user.getStatus());
 
@@ -102,7 +102,7 @@ public class UserDaoImpl implements UserDao {
                     User user = new User(
                             resultSet.getInt("user_id"),
                             resultSet.getString("username"),
-                            resultSet.getString("password_hash"),
+                            resultSet.getString("password"),
                             resultSet.getString("role"),
                             resultSet.getString("status"),
                             resultSet.getString("created_at")
@@ -149,7 +149,7 @@ public class UserDaoImpl implements UserDao {
         ) {
 
             preparedStatement.setString(1, user.getUsername());
-            preparedStatement.setString(2, user.getPasswordHash());
+            preparedStatement.setString(2, user.getPassword());
             preparedStatement.setString(3, user.getRole());
             preparedStatement.setString(4, user.getStatus());
             preparedStatement.setInt(5, user.getUserId());

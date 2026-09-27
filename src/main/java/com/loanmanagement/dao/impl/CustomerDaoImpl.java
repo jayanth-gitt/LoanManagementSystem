@@ -19,12 +19,14 @@ public class CustomerDaoImpl implements CustomerDao {
     private static final Logger logger =
             LoggerFactory.getLogger(CustomerDaoImpl.class);
 
-    // ============================================================
+
+    // =========================================================
     // SQL CONSTANTS
-    // ============================================================
+    // =========================================================
 
     public static final String INSERT_CUSTOMER_SQL = """
-            INSERT INTO customers(
+            INSERT INTO customers
+            (
                 user_id,
                 full_name,
                 email,
@@ -46,15 +48,16 @@ public class CustomerDaoImpl implements CustomerDao {
                 existing_emi,
                 status
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
+
 
     public static final String SELECT_CUSTOMER_BY_ID_SQL = """
             SELECT *
             FROM customers
             WHERE customer_id = ?
             """;
+
 
     public static final String UPDATE_CUSTOMER_SQL = """
             UPDATE customers
@@ -82,15 +85,40 @@ public class CustomerDaoImpl implements CustomerDao {
             WHERE customer_id = ?
             """;
 
+
     public static final String DELETE_CUSTOMER_SQL = """
             DELETE FROM customers
             WHERE customer_id = ?
             """;
 
 
-    // ============================================================
+    public static final String VERIFY_KYC_SQL = """
+            UPDATE customers
+            SET
+                kyc_status = 'VERIFIED',
+                kyc_remarks = NULL,
+                kyc_verified_by = ?,
+                kyc_verified_at = NOW()
+            WHERE customer_id = ?
+              AND kyc_status = 'PENDING'
+            """;
+
+
+    public static final String REJECT_KYC_SQL = """
+            UPDATE customers
+            SET
+                kyc_status = 'REJECTED',
+                kyc_remarks = ?,
+                kyc_verified_by = ?,
+                kyc_verified_at = NOW()
+            WHERE customer_id = ?
+              AND kyc_status = 'PENDING'
+            """;
+
+
+    // =========================================================
     // ADD CUSTOMER
-    // ============================================================
+    // =========================================================
 
     @Override
     public int addCustomer(Customer customer) {
@@ -210,7 +238,7 @@ public class CustomerDaoImpl implements CustomerDao {
                     preparedStatement.executeUpdate();
 
             logger.info(
-                    "Customer '{}' added successfully. Rows affected: {}",
+                    "Customer '{}' added. Rows affected: {}",
                     customer.getFullName(),
                     rowsAffected
             );
@@ -230,9 +258,9 @@ public class CustomerDaoImpl implements CustomerDao {
     }
 
 
-    // ============================================================
+    // =========================================================
     // GET CUSTOMER BY ID
-    // ============================================================
+    // =========================================================
 
     @Override
     public Customer getCustomerById(int customerId) {
@@ -380,9 +408,9 @@ public class CustomerDaoImpl implements CustomerDao {
     }
 
 
-    // ============================================================
+    // =========================================================
     // UPDATE CUSTOMER
-    // ============================================================
+    // =========================================================
 
     @Override
     public int updateCustomer(Customer customer) {
@@ -508,21 +536,10 @@ public class CustomerDaoImpl implements CustomerDao {
             int rowsAffected =
                     preparedStatement.executeUpdate();
 
-            if (rowsAffected > 0) {
-
-                logger.info(
-                        "Customer with ID {} updated successfully. Rows affected: {}",
-                        customer.getCustomerId(),
-                        rowsAffected
-                );
-
-            } else {
-
-                logger.warn(
-                        "No customer found to update with ID: {}",
-                        customer.getCustomerId()
-                );
-            }
+            logger.info(
+                    "Customer update completed. Rows affected: {}",
+                    rowsAffected
+            );
 
             return rowsAffected;
 
@@ -539,9 +556,9 @@ public class CustomerDaoImpl implements CustomerDao {
     }
 
 
-    // ============================================================
+    // =========================================================
     // DELETE CUSTOMER
-    // ============================================================
+    // =========================================================
 
     @Override
     public int deleteCustomer(int customerId) {
@@ -567,21 +584,10 @@ public class CustomerDaoImpl implements CustomerDao {
             int rowsAffected =
                     preparedStatement.executeUpdate();
 
-            if (rowsAffected > 0) {
-
-                logger.info(
-                        "Customer with ID {} deleted successfully. Rows affected: {}",
-                        customerId,
-                        rowsAffected
-                );
-
-            } else {
-
-                logger.warn(
-                        "No customer found to delete with ID: {}",
-                        customerId
-                );
-            }
+            logger.info(
+                    "Customer deletion completed. Rows affected: {}",
+                    rowsAffected
+            );
 
             return rowsAffected;
 
@@ -589,6 +595,126 @@ public class CustomerDaoImpl implements CustomerDao {
 
             logger.error(
                     "Error while deleting customer with ID: {}",
+                    customerId,
+                    e
+            );
+
+            return 0;
+        }
+    }
+
+
+    // =========================================================
+    // VERIFY KYC
+    // =========================================================
+
+    @Override
+    public int verifyKyc(
+            int customerId,
+            int verifiedBy
+    ) {
+
+        logger.info(
+                "Verifying KYC for customer ID: {} by user ID: {}",
+                customerId,
+                verifiedBy
+        );
+
+        try (
+                Connection connection = DBConnection.getConnection();
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                VERIFY_KYC_SQL
+                        )
+        ) {
+
+            preparedStatement.setInt(
+                    1,
+                    verifiedBy
+            );
+
+            preparedStatement.setInt(
+                    2,
+                    customerId
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            logger.info(
+                    "KYC verification completed. Rows affected: {}",
+                    rowsAffected
+            );
+
+            return rowsAffected;
+
+        } catch (SQLException e) {
+
+            logger.error(
+                    "Error while verifying KYC for customer ID: {}",
+                    customerId,
+                    e
+            );
+
+            return 0;
+        }
+    }
+
+
+    // =========================================================
+    // REJECT KYC
+    // =========================================================
+
+    @Override
+    public int rejectKyc(
+            int customerId,
+            int verifiedBy,
+            String remarks
+    ) {
+
+        logger.info(
+                "Rejecting KYC for customer ID: {} by user ID: {}",
+                customerId,
+                verifiedBy
+        );
+
+        try (
+                Connection connection = DBConnection.getConnection();
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                REJECT_KYC_SQL
+                        )
+        ) {
+
+            preparedStatement.setString(
+                    1,
+                    remarks
+            );
+
+            preparedStatement.setInt(
+                    2,
+                    verifiedBy
+            );
+
+            preparedStatement.setInt(
+                    3,
+                    customerId
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            logger.info(
+                    "KYC rejection completed. Rows affected: {}",
+                    rowsAffected
+            );
+
+            return rowsAffected;
+
+        } catch (SQLException e) {
+
+            logger.error(
+                    "Error while rejecting KYC for customer ID: {}",
                     customerId,
                     e
             );

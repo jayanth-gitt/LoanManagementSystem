@@ -11,4 +11,17 @@ public interface LoanApplicationDao {
     int updateLoanApplication(LoanApplication application);
 
     int deleteLoanApplication(int applicationId);
+
+    // Application workflow
+    int approveApplication(
+            int applicationId,
+            int reviewedBy,
+            String remarks
+    );
+
+    int rejectApplication(
+            int applicationId,
+            int reviewedBy,
+            String remarks
+    );
 }

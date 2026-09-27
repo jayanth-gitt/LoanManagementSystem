@@ -3,7 +3,7 @@ package com.loanmanagement.model;
 public class User {
     private int userId;
     private String username;
-    private String passwordHash;
+    private String password;
     private String role;
     private String status;
     private String createdAt;
@@ -11,7 +11,7 @@ public class User {
     public User(int userId, String username, String passwordHash, String role, String status, String createdAt) {
         this.userId = userId;
         this.username = username;
-        this.passwordHash = passwordHash;
+        this.password = password;
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
@@ -26,7 +26,7 @@ public class User {
     }
 
     public String getPasswordHash() {
-        return passwordHash;
+        return password;
     }
 
     public String getRole() {
@@ -50,7 +50,7 @@ public class User {
     }
 
     public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+        this.password = password;
     }
 
     public void setRole(String role) {
@@ -63,5 +63,13 @@ public class User {
 
     public void setCreatedAt(String createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

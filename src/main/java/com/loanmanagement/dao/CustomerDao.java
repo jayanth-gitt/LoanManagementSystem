@@ -11,4 +11,8 @@ public interface CustomerDao {
     int updateCustomer(Customer customer);
 
     int deleteCustomer(int customerId);
+
+    int verifyKyc(int customerId, int verifiedBy);
+
+    int rejectKyc(int customerId, int verifiedBy, String remarks);
 }

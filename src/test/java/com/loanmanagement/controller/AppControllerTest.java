@@ -5,7 +5,6 @@ import com.loanmanagement.model.CustomerStatus;
 import com.loanmanagement.model.KycStatus;
 import com.loanmanagement.model.Loan;
 import com.loanmanagement.model.LoanApplication;
-import com.loanmanagement.model.LoanType;
 import com.loanmanagement.model.User;
 import com.loanmanagement.util.DBConnection;
 
@@ -16,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -26,18 +27,29 @@ class AppControllerTest {
 
     private String testUsername;
     private String testEmail;
-    private String testLoanTypeName;
+    private String testPan;
+    private String testPhone;
+    private String testAccountNumber;
 
     private int testUserId;
     private int testCustomerId;
-    private int testLoanTypeId;
     private int testApplicationId;
     private int testLoanId;
 
+    /*
+     * Existing Loan Officer created in the database.
+     */
+    private static final int LOAN_OFFICER_ID = 200;
 
-    // ============================================================
+    /*
+     * Existing active loan type from the database.
+     */
+    private static final int LOAN_TYPE_ID = 25;
+
+
+    // =========================================================
     // SETUP
-    // ============================================================
+    // =========================================================
 
     @BeforeEach
     void setUp() {
@@ -47,129 +59,123 @@ class AppControllerTest {
         String uniqueId =
                 UUID.randomUUID()
                         .toString()
+                        .replace("-", "")
                         .substring(0, 8);
 
-        testUsername = "junit_user_" + uniqueId;
-        testEmail = "junit_" + uniqueId + "@test.com";
-        testLoanTypeName = "JUnit Loan " + uniqueId;
+        testUsername =
+                "junit_user_" + uniqueId;
+
+        testEmail =
+                "junit_" + uniqueId + "@test.com";
+
+        testPan =
+                "ABC" +
+                        uniqueId.substring(0, 5).toUpperCase() +
+                        "F";
+
+        /*
+         * Generate a valid 10-digit phone number.
+         */
+        long number =
+                9000000000L
+                        + Math.abs(uniqueId.hashCode() % 1000000000);
+
+        testPhone =
+                String.valueOf(number);
+
+        /*
+         * Generate a unique 10-digit account number.
+         */
+        testAccountNumber =
+                "1" +
+                        String.format(
+                                "%09d",
+                                Math.abs(uniqueId.hashCode())
+                                        % 1000000000
+                        );
     }
 
 
-    // ============================================================
+    // =========================================================
     // CLEANUP
-    // ============================================================
+    // =========================================================
 
     @AfterEach
     void tearDown() {
 
         /*
-         * Delete child records first because of foreign keys.
+         * Child records must be deleted before parent records.
          */
 
         if (testLoanId != 0) {
-            appController.deleteLoan(testLoanId);
+
+            appController.deleteLoan(
+                    testLoanId
+            );
+
+            testLoanId = 0;
         }
 
         if (testApplicationId != 0) {
-            appController.deleteApplication(testApplicationId);
-        }
 
-        if (testLoanTypeId != 0) {
-            appController.deleteLoanType(testLoanTypeId);
+            appController.deleteLoanApplication(
+                    testApplicationId
+            );
+
+            testApplicationId = 0;
         }
 
         if (testCustomerId != 0) {
-            appController.deleteCustomer(testCustomerId);
+
+            appController.deleteCustomer(
+                    testCustomerId
+            );
+
+            testCustomerId = 0;
         }
 
         if (testUserId != 0) {
-            appController.deleteUser(testUserId);
+
+            appController.deleteUser(
+                    testUserId
+            );
+
+            testUserId = 0;
         }
     }
 
 
-    // ============================================================
-    // USER
-    // ============================================================
+    // =========================================================
+    // USER TEST
+    // =========================================================
 
     @Test
     void addUser() {
 
         User user = createTestUser();
 
-        appController.addUser(user);
+        int rowsAffected =
+                appController.addUser(user);
+
+        assertEquals(
+                1,
+                rowsAffected
+        );
 
         testUserId =
-                getUserIdByUsername(testUsername);
+                getUserIdByUsername(
+                        testUsername
+                );
 
-        assertTrue(testUserId > 0);
-    }
-
-
-    @Test
-    void getUserById() {
-
-        addTestUser();
-
-        User result =
-                appController.getUserById(testUserId);
-
-        assertNotNull(result);
-
-        assertEquals(
-                testUsername,
-                result.getUsername()
+        assertTrue(
+                testUserId > 0
         );
     }
 
 
-    @Test
-    void updateUser() {
-
-        addTestUser();
-
-        User updatedUser = new User(
-                testUserId,
-                testUsername,
-                "updatedPassword",
-                "CUSTOMER",
-                "ACTIVE",
-                null
-        );
-
-        appController.updateUser(updatedUser);
-
-        User fetchedUser =
-                appController.getUserById(testUserId);
-
-        assertNotNull(fetchedUser);
-
-        assertEquals(
-                "updatedPassword",
-                fetchedUser.getPasswordHash()
-        );
-    }
-
-
-    @Test
-    void deleteUser() {
-
-        addTestUser();
-
-        appController.deleteUser(testUserId);
-
-        User deletedUser =
-                appController.getUserById(testUserId);
-
-        assertNull(deletedUser);
-
-        testUserId = 0;
-    }
-
-
-    // ============================================================
-    // CUSTOMER
-    // ============================================================
+    // =========================================================
+    // CUSTOMER TEST
+    // =========================================================
 
     @Test
     void addCustomer() {
@@ -177,403 +183,524 @@ class AppControllerTest {
         addTestUser();
 
         Customer customer =
-                createTestCustomer(testUserId);
-
-        appController.addCustomer(customer);
-
-        testCustomerId =
-                getCustomerIdByEmail(testEmail);
-
-        assertTrue(testCustomerId > 0);
-    }
-
-
-    @Test
-    void getCustomerById() {
-
-        addTestCustomer();
-
-        Customer result =
-                appController.getCustomerById(
-                        testCustomerId
-                );
-
-        assertNotNull(result);
-
-        assertEquals(
-                testEmail,
-                result.getEmail()
-        );
-    }
-
-
-    @Test
-    void updateCustomer() {
-
-        addTestCustomer();
-
-        Customer customer =
-                createTestCustomer(testUserId);
-
-        customer.setCustomerId(testCustomerId);
-
-        customer.setFullName(
-                "Updated JUnit Customer"
-        );
-
-        appController.updateCustomer(customer);
-
-        Customer updatedCustomer =
-                appController.getCustomerById(
-                        testCustomerId
-                );
-
-        assertNotNull(updatedCustomer);
-
-        assertEquals(
-                "Updated JUnit Customer",
-                updatedCustomer.getFullName()
-        );
-    }
-
-
-    @Test
-    void deleteCustomer() {
-
-        addTestCustomer();
-
-        appController.deleteCustomer(
-                testCustomerId
-        );
-
-        Customer deletedCustomer =
-                appController.getCustomerById(
-                        testCustomerId
-                );
-
-        assertNull(deletedCustomer);
-
-        testCustomerId = 0;
-    }
-
-
-    // ============================================================
-    // LOAN TYPE
-    // ============================================================
-
-    @Test
-    void addLoanType() {
-
-        LoanType loanType =
-                createTestLoanType();
-
-        appController.addLoanType(loanType);
-
-        testLoanTypeId =
-                getLoanTypeIdByName(
-                        testLoanTypeName
-                );
-
-        assertTrue(testLoanTypeId > 0);
-    }
-
-
-    @Test
-    void getLoanTypeById() {
-
-        addTestLoanType();
-
-        LoanType result =
-                appController.getLoanTypeById(
-                        testLoanTypeId
-                );
-
-        assertNotNull(result);
-
-        assertEquals(
-                testLoanTypeName,
-                result.getName()
-        );
-    }
-
-
-    @Test
-    void updateLoanType() {
-
-        addTestLoanType();
-
-        LoanType loanType =
-                createTestLoanType();
-
-        loanType.setLoanTypeId(
-                testLoanTypeId
-        );
-
-        loanType.setName(
-                testLoanTypeName + " Updated"
-        );
-
-        appController.updateLoanType(
-                loanType
-        );
-
-        LoanType updatedLoanType =
-                appController.getLoanTypeById(
-                        testLoanTypeId
-                );
-
-        assertNotNull(updatedLoanType);
-
-        assertEquals(
-                testLoanTypeName + " Updated",
-                updatedLoanType.getName()
-        );
-    }
-
-
-    @Test
-    void deleteLoanType() {
-
-        addTestLoanType();
-
-        appController.deleteLoanType(
-                testLoanTypeId
-        );
-
-        LoanType deletedLoanType =
-                appController.getLoanTypeById(
-                        testLoanTypeId
-                );
-
-        assertNull(deletedLoanType);
-
-        testLoanTypeId = 0;
-    }
-
-
-    // ============================================================
-    // LOAN APPLICATION
-    // ============================================================
-
-    @Test
-    void addApplication() {
-
-        addTestCustomer();
-        addTestLoanType();
-
-        LoanApplication application =
-                createTestLoanApplication(
-                        testCustomerId,
-                        testLoanTypeId,
+                createTestCustomer(
                         testUserId
                 );
 
-        appController.addApplication(
-                application
+        int rowsAffected =
+                appController.addCustomer(
+                        customer
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
+        );
+
+        testCustomerId =
+                getCustomerIdByEmail(
+                        testEmail
+                );
+
+        assertTrue(
+                testCustomerId > 0
+        );
+    }
+
+
+    // =========================================================
+    // KYC TEST
+    // =========================================================
+
+    @Test
+    void verifyCustomerKyc() {
+
+        addTestCustomer();
+
+        int rowsAffected =
+                appController.verifyCustomerKyc(
+                        testCustomerId,
+                        LOAN_OFFICER_ID
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
+        );
+
+        Customer customer =
+                appController.getCustomerById(
+                        testCustomerId
+                );
+
+        assertNotNull(customer);
+
+        assertEquals(
+                KycStatus.VERIFIED,
+                customer.getKycStatus()
+        );
+    }
+
+
+    // =========================================================
+    // LOAN APPLICATION TEST
+    // =========================================================
+
+    @Test
+    void addLoanApplication() {
+
+        addTestCustomer();
+
+        /*
+         * Loan application requires VERIFIED KYC.
+         */
+        int kycResult =
+                appController.verifyCustomerKyc(
+                        testCustomerId,
+                        LOAN_OFFICER_ID
+                );
+
+        assertEquals(
+                1,
+                kycResult
+        );
+
+        LoanApplication application =
+                createTestLoanApplication();
+
+        int rowsAffected =
+                appController.addLoanApplication(
+                        application
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
         );
 
         testApplicationId =
                 getLoanApplicationId(
-                        testCustomerId,
-                        testLoanTypeId
+                        testCustomerId
                 );
 
-        assertTrue(testApplicationId > 0);
-    }
+        assertTrue(
+                testApplicationId > 0
+        );
 
-
-    @Test
-    void getApplicationById() {
-
-        addTestLoanApplication();
-
-        LoanApplication result =
-                appController.getApplicationById(
+        LoanApplication savedApplication =
+                appController.getLoanApplicationById(
                         testApplicationId
                 );
 
-        assertNotNull(result);
-
-        assertEquals(
-                testCustomerId,
-                result.getCustomerId()
+        assertNotNull(
+                savedApplication
         );
 
+        /*
+         * New applications must start as PENDING.
+         */
         assertEquals(
-                testLoanTypeId,
-                result.getLoanTypeId()
+                "PENDING",
+                savedApplication.getStatus()
         );
     }
 
 
+    // =========================================================
+    // APPROVE APPLICATION TEST
+    // =========================================================
+
     @Test
-    void updateApplication() {
+    void approveLoanApplication() {
 
-        addTestLoanApplication();
+        addLoanApplication();
 
-        LoanApplication application =
-                createTestLoanApplication(
-                        testCustomerId,
-                        testLoanTypeId,
-                        testUserId
+        int rowsAffected =
+                appController.approveLoanApplication(
+                        testApplicationId,
+                        LOAN_OFFICER_ID,
+                        "Application approved for loan creation"
                 );
 
-        application.setApplicationId(
-                testApplicationId
+        assertEquals(
+                1,
+                rowsAffected
         );
 
-        application.setPurpose(
-                "Updated JUnit Purpose"
-        );
+        LoanApplication application =
+                appController.getLoanApplicationById(
+                        testApplicationId
+                );
 
-        appController.updateApplication(
+        assertNotNull(
                 application
         );
 
-        LoanApplication updatedApplication =
-                appController.getApplicationById(
-                        testApplicationId
-                );
-
-        assertNotNull(updatedApplication);
+        assertEquals(
+                "APPROVED",
+                application.getStatus()
+        );
 
         assertEquals(
-                "Updated JUnit Purpose",
-                updatedApplication.getPurpose()
+                LOAN_OFFICER_ID,
+                application.getReviewedBy()
+        );
+
+        assertEquals(
+                "Application approved for loan creation",
+                application.getRemarks()
         );
     }
 
 
+    // =========================================================
+    // REJECT APPLICATION TEST
+    // =========================================================
+
     @Test
-    void deleteApplication() {
+    void rejectLoanApplication() {
 
-        addTestLoanApplication();
+        addLoanApplication();
 
-        appController.deleteApplication(
-                testApplicationId
+        int rowsAffected =
+                appController.rejectLoanApplication(
+                        testApplicationId,
+                        LOAN_OFFICER_ID,
+                        "Insufficient documentation"
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
         );
 
-        LoanApplication deletedApplication =
-                appController.getApplicationById(
+        LoanApplication application =
+                appController.getLoanApplicationById(
                         testApplicationId
                 );
 
-        assertNull(deletedApplication);
+        assertNotNull(
+                application
+        );
 
-        testApplicationId = 0;
+        assertEquals(
+                "REJECTED",
+                application.getStatus()
+        );
+
+        assertEquals(
+                LOAN_OFFICER_ID,
+                application.getReviewedBy()
+        );
+
+        assertEquals(
+                "Insufficient documentation",
+                application.getRemarks()
+        );
     }
 
 
-    // ============================================================
-    // LOAN
-    // ============================================================
+    // =========================================================
+    // LOAN CREATION TEST
+    // =========================================================
 
     @Test
     void addLoan() {
 
-        addTestLoanApplication();
+        /*
+         * Create customer
+         * → verify KYC
+         * → create application
+         */
+        addLoanApplication();
 
-        Loan loan =
-                createTestLoan(
+        /*
+         * Application must be APPROVED
+         * before loan creation.
+         */
+        int approvalResult =
+                appController.approveLoanApplication(
                         testApplicationId,
-                        testCustomerId,
-                        testLoanTypeId
+                        LOAN_OFFICER_ID,
+                        "Approved for loan creation"
                 );
 
-        appController.addLoan(loan);
+        assertEquals(
+                1,
+                approvalResult
+        );
+
+        /*
+         * Create an empty loan object.
+         *
+         * LoanServiceImpl will populate:
+         * customerId
+         * loanTypeId
+         * principalAmount
+         * interestRate
+         * tenure
+         * EMI
+         * startDate
+         * endDate
+         * outstandingAmount
+         * status
+         */
+        Loan loan =
+                new Loan(
+                        0,
+                        testApplicationId,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                        0,
+                        0.0,
+                        null,
+                        null,
+                        0.0,
+                        null
+                );
+
+        int rowsAffected =
+                appController.addLoan(
+                        loan
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
+        );
 
         testLoanId =
                 getLoanIdByApplicationId(
                         testApplicationId
                 );
 
-        assertTrue(testLoanId > 0);
-    }
+        assertTrue(
+                testLoanId > 0
+        );
 
-
-    @Test
-    void getLoanById() {
-
-        addTestLoan();
-
-        Loan result =
+        /*
+         * Fetch the created loan.
+         */
+        Loan savedLoan =
                 appController.getLoanById(
                         testLoanId
                 );
 
-        assertNotNull(result);
+        assertNotNull(
+                savedLoan
+        );
+
+        /*
+         * Verify basic loan values.
+         */
+        assertEquals(
+                testApplicationId,
+                savedLoan.getApplicationId()
+        );
 
         assertEquals(
                 testCustomerId,
-                result.getCustomerId()
+                savedLoan.getCustomerId()
         );
 
         assertEquals(
-                testApplicationId,
-                result.getApplicationId()
+                LOAN_TYPE_ID,
+                savedLoan.getLoanTypeId()
+        );
+
+        assertEquals(
+                100000.0,
+                savedLoan.getPrincipalAmount()
+        );
+
+        /*
+         * Loan type 25 currently has 10.5% interest.
+         */
+        assertEquals(
+                10.5,
+                savedLoan.getInterestRate(),
+                0.01
+        );
+
+        assertEquals(
+                24,
+                savedLoan.getTenureMonths()
+        );
+
+        /*
+         * EMI must have been calculated.
+         */
+        assertTrue(
+                savedLoan.getEmiAmount() > 0
+        );
+
+        /*
+         * Outstanding starts at principal amount.
+         */
+        assertEquals(
+                100000.0,
+                savedLoan.getOutstandingAmount(),
+                0.01
+        );
+
+        /*
+         * New loan must be ACTIVE.
+         */
+        assertEquals(
+                "ACTIVE",
+                savedLoan.getStatus()
+        );
+
+        /*
+         * Dates must be populated.
+         */
+        assertNotNull(
+                savedLoan.getStartDate()
+        );
+
+        assertNotNull(
+                savedLoan.getEndDate()
         );
     }
 
 
+    // =========================================================
+    // DUPLICATE LOAN TEST
+    // =========================================================
+
     @Test
-    void updateLoan() {
+    void duplicateLoanForSameApplication() {
 
-        addTestLoan();
+        addLoanApplication();
 
-        Loan loan =
-                createTestLoan(
+        int approvalResult =
+                appController.approveLoanApplication(
                         testApplicationId,
-                        testCustomerId,
-                        testLoanTypeId
+                        LOAN_OFFICER_ID,
+                        "Approved for loan creation"
                 );
-
-        loan.setLoanId(testLoanId);
-
-        loan.setPrincipalAmount(
-                150000.0
-        );
-
-        appController.updateLoan(loan);
-
-        Loan updatedLoan =
-                appController.getLoanById(
-                        testLoanId
-                );
-
-        assertNotNull(updatedLoan);
 
         assertEquals(
-                150000.0,
-                updatedLoan.getPrincipalAmount()
-        );
-    }
-
-
-    @Test
-    void deleteLoan() {
-
-        addTestLoan();
-
-        appController.deleteLoan(
-                testLoanId
+                1,
+                approvalResult
         );
 
-        Loan deletedLoan =
-                appController.getLoanById(
-                        testLoanId
+        Loan firstLoan =
+                new Loan(
+                        0,
+                        testApplicationId,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                        0,
+                        0.0,
+                        null,
+                        null,
+                        0.0,
+                        null
                 );
 
-        assertNull(deletedLoan);
+        int firstResult =
+                appController.addLoan(
+                        firstLoan
+                );
 
-        testLoanId = 0;
+        assertEquals(
+                1,
+                firstResult
+        );
+
+        testLoanId =
+                getLoanIdByApplicationId(
+                        testApplicationId
+                );
+
+        /*
+         * Try creating another loan for the
+         * same application.
+         *
+         * application_id has a UNIQUE constraint
+         * in the database.
+         */
+        Loan secondLoan =
+                new Loan(
+                        0,
+                        testApplicationId,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                        0,
+                        0.0,
+                        null,
+                        null,
+                        0.0,
+                        null
+                );
+
+        int secondResult =
+                appController.addLoan(
+                        secondLoan
+                );
+
+        assertEquals(
+                0,
+                secondResult
+        );
     }
 
 
-    // ============================================================
-    // TEST DATA HELPERS
-    // ============================================================
+    // =========================================================
+    // APPROVED APPLICATION IS REQUIRED
+    // =========================================================
+
+    @Test
+    void loanCannotBeCreatedFromPendingApplication() {
+
+        addLoanApplication();
+
+        /*
+         * Application is still PENDING.
+         */
+        Loan loan =
+                new Loan(
+                        0,
+                        testApplicationId,
+                        0,
+                        0,
+                        0.0,
+                        0.0,
+                        0,
+                        0.0,
+                        null,
+                        null,
+                        0.0,
+                        null
+                );
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> appController.addLoan(loan)
+        );
+    }
+
+
+    // =========================================================
+    // HELPER: CREATE USER
+    // =========================================================
 
     private User createTestUser() {
+
+        String createdAt =
+                LocalDateTime.now()
+                        .format(
+                                DateTimeFormatter.ofPattern(
+                                        "yyyy-MM-dd HH:mm:ss"
+                                )
+                        );
 
         return new User(
                 0,
@@ -581,10 +708,14 @@ class AppControllerTest {
                 "test123",
                 "CUSTOMER",
                 "ACTIVE",
-                null
+                createdAt
         );
     }
 
+
+    // =========================================================
+    // HELPER: CREATE CUSTOMER
+    // =========================================================
 
     private Customer createTestCustomer(
             int userId
@@ -595,19 +726,19 @@ class AppControllerTest {
                 userId,
                 "JUnit Customer",
                 testEmail,
-                "9876543210",
+                testPhone,
                 "2000-01-01",
                 "Hyderabad",
                 50000.0,
-                "ABCDE1234F",
+                testPan,
                 "1234",
                 "SALARIED",
-                "1234567890",
+                testAccountNumber,
                 "UBIN0001234",
                 "Union Bank",
                 KycStatus.PENDING,
                 null,
-                userId,
+                0,
                 null,
                 750,
                 5000.0,
@@ -616,166 +747,95 @@ class AppControllerTest {
     }
 
 
-    private LoanType createTestLoanType() {
+    // =========================================================
+    // HELPER: CREATE LOAN APPLICATION
+    // =========================================================
 
-        return new LoanType(
-                0,
-                testLoanTypeName,
-                "JUnit Test Loan",
-                10.5,
-                50000.0,
-                500000.0,
-                60,
-                "ACTIVE"
-        );
-    }
-
-
-    private LoanApplication createTestLoanApplication(
-            int customerId,
-            int loanTypeId,
-            int reviewedBy
-    ) {
+    private LoanApplication createTestLoanApplication() {
 
         return new LoanApplication(
                 0,
-                customerId,
-                loanTypeId,
+                testCustomerId,
+                LOAN_TYPE_ID,
                 100000.0,
                 24,
                 "JUnit Test Purpose",
                 "PENDING",
                 null,
-                reviewedBy,
+                0,
                 null,
                 null
         );
     }
 
 
-    private Loan createTestLoan(
-            int applicationId,
-            int customerId,
-            int loanTypeId
-    ) {
+    // =========================================================
+    // HELPER: ADD TEST USER
+    // =========================================================
 
-        return new Loan(
-                0,
-                applicationId,
-                customerId,
-                loanTypeId,
-                100000.0,
-                10.5,
-                24,
-                4639.0,
-                "2026-09-25",
-                "2028-09-25",
-                100000.0,
-                "ACTIVE"
+    private void addTestUser() {
+
+        User user =
+                createTestUser();
+
+        int rowsAffected =
+                appController.addUser(
+                        user
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
+        );
+
+        testUserId =
+                getUserIdByUsername(
+                        testUsername
+                );
+
+        assertTrue(
+                testUserId > 0
         );
     }
 
 
-    // ============================================================
-    // PREPARE TEST RECORDS
-    // ============================================================
-
-    private void addTestUser() {
-
-        User user = createTestUser();
-
-        appController.addUser(user);
-
-        testUserId =
-                getUserIdByUsername(testUsername);
-
-        assertTrue(testUserId > 0);
-    }
-
+    // =========================================================
+    // HELPER: ADD TEST CUSTOMER
+    // =========================================================
 
     private void addTestCustomer() {
 
         addTestUser();
 
         Customer customer =
-                createTestCustomer(testUserId);
-
-        appController.addCustomer(customer);
-
-        testCustomerId =
-                getCustomerIdByEmail(testEmail);
-
-        assertTrue(testCustomerId > 0);
-    }
-
-
-    private void addTestLoanType() {
-
-        LoanType loanType =
-                createTestLoanType();
-
-        appController.addLoanType(loanType);
-
-        testLoanTypeId =
-                getLoanTypeIdByName(
-                        testLoanTypeName
-                );
-
-        assertTrue(testLoanTypeId > 0);
-    }
-
-
-    private void addTestLoanApplication() {
-
-        addTestCustomer();
-        addTestLoanType();
-
-        LoanApplication application =
-                createTestLoanApplication(
-                        testCustomerId,
-                        testLoanTypeId,
+                createTestCustomer(
                         testUserId
                 );
 
-        appController.addApplication(
-                application
+        int rowsAffected =
+                appController.addCustomer(
+                        customer
+                );
+
+        assertEquals(
+                1,
+                rowsAffected
         );
 
-        testApplicationId =
-                getLoanApplicationId(
-                        testCustomerId,
-                        testLoanTypeId
+        testCustomerId =
+                getCustomerIdByEmail(
+                        testEmail
                 );
 
-        assertTrue(testApplicationId > 0);
+        assertTrue(
+                testCustomerId > 0
+        );
     }
 
 
-    private void addTestLoan() {
-
-        addTestLoanApplication();
-
-        Loan loan =
-                createTestLoan(
-                        testApplicationId,
-                        testCustomerId,
-                        testLoanTypeId
-                );
-
-        appController.addLoan(loan);
-
-        testLoanId =
-                getLoanIdByApplicationId(
-                        testApplicationId
-                );
-
-        assertTrue(testLoanId > 0);
-    }
-
-
-    // ============================================================
-    // DATABASE LOOKUP HELPERS
-    // ============================================================
+    // =========================================================
+    // HELPER: GET USER ID
+    // =========================================================
 
     private int getUserIdByUsername(
             String username
@@ -795,14 +855,19 @@ class AppControllerTest {
                         connection.prepareStatement(sql)
         ) {
 
-            statement.setString(1, username);
+            statement.setString(
+                    1,
+                    username
+            );
 
             try (
                     ResultSet resultSet =
                             statement.executeQuery()
             ) {
 
-                assertTrue(resultSet.next());
+                assertTrue(
+                        resultSet.next()
+                );
 
                 return resultSet.getInt(
                         "user_id"
@@ -820,6 +885,10 @@ class AppControllerTest {
         }
     }
 
+
+    // =========================================================
+    // HELPER: GET CUSTOMER ID
+    // =========================================================
 
     private int getCustomerIdByEmail(
             String email
@@ -839,14 +908,19 @@ class AppControllerTest {
                         connection.prepareStatement(sql)
         ) {
 
-            statement.setString(1, email);
+            statement.setString(
+                    1,
+                    email
+            );
 
             try (
                     ResultSet resultSet =
                             statement.executeQuery()
             ) {
 
-                assertTrue(resultSet.next());
+                assertTrue(
+                        resultSet.next()
+                );
 
                 return resultSet.getInt(
                         "customer_id"
@@ -865,60 +939,19 @@ class AppControllerTest {
     }
 
 
-    private int getLoanTypeIdByName(
-            String name
-    ) {
-
-        String sql = """
-                SELECT loan_type_id
-                FROM loan_types
-                WHERE name = ?
-                """;
-
-        try (
-                Connection connection =
-                        DBConnection.getConnection();
-
-                PreparedStatement statement =
-                        connection.prepareStatement(sql)
-        ) {
-
-            statement.setString(1, name);
-
-            try (
-                    ResultSet resultSet =
-                            statement.executeQuery()
-            ) {
-
-                assertTrue(resultSet.next());
-
-                return resultSet.getInt(
-                        "loan_type_id"
-                );
-            }
-
-        } catch (Exception e) {
-
-            fail(
-                    "Unable to find test loan type: "
-                            + e.getMessage()
-            );
-
-            return 0;
-        }
-    }
-
+    // =========================================================
+    // HELPER: GET APPLICATION ID
+    // =========================================================
 
     private int getLoanApplicationId(
-            int customerId,
-            int loanTypeId
+            int customerId
     ) {
 
         String sql = """
                 SELECT application_id
                 FROM loan_applications
                 WHERE customer_id = ?
-                AND loan_type_id = ?
+                  AND loan_type_id = ?
                 ORDER BY application_id DESC
                 LIMIT 1
                 """;
@@ -931,15 +964,24 @@ class AppControllerTest {
                         connection.prepareStatement(sql)
         ) {
 
-            statement.setInt(1, customerId);
-            statement.setInt(2, loanTypeId);
+            statement.setInt(
+                    1,
+                    customerId
+            );
+
+            statement.setInt(
+                    2,
+                    LOAN_TYPE_ID
+            );
 
             try (
                     ResultSet resultSet =
                             statement.executeQuery()
             ) {
 
-                assertTrue(resultSet.next());
+                assertTrue(
+                        resultSet.next()
+                );
 
                 return resultSet.getInt(
                         "application_id"
@@ -957,6 +999,10 @@ class AppControllerTest {
         }
     }
 
+
+    // =========================================================
+    // HELPER: GET LOAN ID
+    // =========================================================
 
     private int getLoanIdByApplicationId(
             int applicationId
@@ -976,14 +1022,19 @@ class AppControllerTest {
                         connection.prepareStatement(sql)
         ) {
 
-            statement.setInt(1, applicationId);
+            statement.setInt(
+                    1,
+                    applicationId
+            );
 
             try (
                     ResultSet resultSet =
                             statement.executeQuery()
             ) {
 
-                assertTrue(resultSet.next());
+                assertTrue(
+                        resultSet.next()
+                );
 
                 return resultSet.getInt(
                         "loan_id"

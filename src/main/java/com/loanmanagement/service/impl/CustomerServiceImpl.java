@@ -29,4 +29,28 @@ public class CustomerServiceImpl implements CustomerService {
     public int deleteCustomer(int customerId) {
         return customerDao.deleteCustomer(customerId);
     }
+
+    @Override
+    public int verifyKyc(
+            int customerId,
+            int verifiedBy
+    ) {
+        return customerDao.verifyKyc(
+                customerId,
+                verifiedBy
+        );
+    }
+
+    @Override
+    public int rejectKyc(
+            int customerId,
+            int verifiedBy,
+            String remarks
+    ) {
+        return customerDao.rejectKyc(
+                customerId,
+                verifiedBy,
+                remarks
+        );
+    }
 }

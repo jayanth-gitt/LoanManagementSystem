@@ -17,6 +17,7 @@ public class LoanApplicationDaoImpl implements LoanApplicationDao {
     private static final Logger logger =
             LoggerFactory.getLogger(LoanApplicationDaoImpl.class);
 
+
     // ============================================================
     // SQL CONSTANTS
     // ============================================================
@@ -37,11 +38,13 @@ public class LoanApplicationDaoImpl implements LoanApplicationDao {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
+
     public static final String SELECT_LOAN_APPLICATION_BY_ID_SQL = """
             SELECT *
             FROM loan_applications
             WHERE application_id = ?
             """;
+
 
     public static final String UPDATE_LOAN_APPLICATION_SQL = """
             UPDATE loan_applications
@@ -58,9 +61,42 @@ public class LoanApplicationDaoImpl implements LoanApplicationDao {
             WHERE application_id = ?
             """;
 
+
     public static final String DELETE_LOAN_APPLICATION_SQL = """
             DELETE FROM loan_applications
             WHERE application_id = ?
+            """;
+
+
+    // ============================================================
+    // APPROVE APPLICATION
+    // ============================================================
+
+    public static final String APPROVE_APPLICATION_SQL = """
+            UPDATE loan_applications
+            SET
+                status = 'APPROVED',
+                remarks = ?,
+                reviewed_by = ?,
+                reviewed_at = NOW()
+            WHERE application_id = ?
+              AND status = 'PENDING'
+            """;
+
+
+    // ============================================================
+    // REJECT APPLICATION
+    // ============================================================
+
+    public static final String REJECT_APPLICATION_SQL = """
+            UPDATE loan_applications
+            SET
+                status = 'REJECTED',
+                remarks = ?,
+                reviewed_by = ?,
+                reviewed_at = NOW()
+            WHERE application_id = ?
+              AND status = 'PENDING'
             """;
 
 
@@ -156,7 +192,9 @@ public class LoanApplicationDaoImpl implements LoanApplicationDao {
     // ============================================================
 
     @Override
-    public LoanApplication getLoanApplicationById(int applicationId) {
+    public LoanApplication getLoanApplicationById(
+            int applicationId
+    ) {
 
         logger.info(
                 "Fetching loan application with ID: {}",
@@ -414,6 +452,132 @@ public class LoanApplicationDaoImpl implements LoanApplicationDao {
 
             logger.error(
                     "Error while deleting loan application with ID: {}",
+                    applicationId,
+                    e
+            );
+
+            return 0;
+        }
+    }
+
+
+    // ============================================================
+    // APPROVE APPLICATION
+    // ============================================================
+
+    @Override
+    public int approveApplication(
+            int applicationId,
+            int reviewedBy,
+            String remarks
+    ) {
+
+        logger.info(
+                "Approving loan application ID: {} by user ID: {}",
+                applicationId,
+                reviewedBy
+        );
+
+        try (
+                Connection connection = DBConnection.getConnection();
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                APPROVE_APPLICATION_SQL
+                        )
+        ) {
+
+            preparedStatement.setString(
+                    1,
+                    remarks
+            );
+
+            preparedStatement.setInt(
+                    2,
+                    reviewedBy
+            );
+
+            preparedStatement.setInt(
+                    3,
+                    applicationId
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            logger.info(
+                    "Loan application approval completed. Rows affected: {}",
+                    rowsAffected
+            );
+
+            return rowsAffected;
+
+        } catch (SQLException e) {
+
+            logger.error(
+                    "Error while approving loan application ID: {}",
+                    applicationId,
+                    e
+            );
+
+            return 0;
+        }
+    }
+
+
+    // ============================================================
+    // REJECT APPLICATION
+    // ============================================================
+
+    @Override
+    public int rejectApplication(
+            int applicationId,
+            int reviewedBy,
+            String remarks
+    ) {
+
+        logger.info(
+                "Rejecting loan application ID: {} by user ID: {}",
+                applicationId,
+                reviewedBy
+        );
+
+        try (
+                Connection connection = DBConnection.getConnection();
+                PreparedStatement preparedStatement =
+                        connection.prepareStatement(
+                                REJECT_APPLICATION_SQL
+                        )
+        ) {
+
+            preparedStatement.setString(
+                    1,
+                    remarks
+            );
+
+            preparedStatement.setInt(
+                    2,
+                    reviewedBy
+            );
+
+            preparedStatement.setInt(
+                    3,
+                    applicationId
+            );
+
+            int rowsAffected =
+                    preparedStatement.executeUpdate();
+
+            logger.info(
+                    "Loan application rejection completed. Rows affected: {}",
+                    rowsAffected
+            );
+
+            return rowsAffected;
+
+        } catch (SQLException e) {
+
+            logger.error(
+                    "Error while rejecting loan application ID: {}",
                     applicationId,
                     e
             );

@@ -146,14 +146,32 @@ public class LoanTypeDaoImpl implements LoanTypeDao {
 
                 if (resultSet.next()) {
 
+                    /*
+                     * IMPORTANT:
+                     *
+                     * LoanType constructor order:
+                     *
+                     * loanTypeId
+                     * name
+                     * description
+                     * interestRate
+                     * minAmount
+                     * maxAmount
+                     * maxTenureMonths
+                     * status
+                     *
+                     * Therefore the database columns must be mapped
+                     * according to the constructor parameter order.
+                     */
+
                     LoanType loanType =
                             new LoanType(
                                     resultSet.getInt("loan_type_id"),
                                     resultSet.getString("name"),
                                     resultSet.getString("description"),
+                                    resultSet.getDouble("interest_rate"),
                                     resultSet.getDouble("min_amount"),
                                     resultSet.getDouble("max_amount"),
-                                    resultSet.getDouble("interest_rate"),
                                     resultSet.getInt("max_tenure_months"),
                                     resultSet.getString("status")
                             );

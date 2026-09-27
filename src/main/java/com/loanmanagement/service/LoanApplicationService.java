@@ -4,23 +4,23 @@ import com.loanmanagement.model.LoanApplication;
 
 public interface LoanApplicationService {
 
-    void addApplication(LoanApplication application);
+    int addApplication(LoanApplication application);
 
     LoanApplication getApplicationById(int applicationId);
 
-    void updateApplication(LoanApplication application);
+    int updateApplication(LoanApplication application);
 
-    void approveApplication(
+    int approveApplication(
             int applicationId,
             int loanOfficerId,
             String remarks
     );
 
-    void rejectApplication(
+    int rejectApplication(
             int applicationId,
             int loanOfficerId,
             String remarks
     );
 
-    void deleteApplication(int applicationId);
+    int deleteApplication(int applicationId);
 }
