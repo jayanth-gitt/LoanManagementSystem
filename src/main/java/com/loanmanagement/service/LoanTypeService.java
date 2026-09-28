@@ -2,12 +2,16 @@ package com.loanmanagement.service;
 
 import com.loanmanagement.model.LoanType;
 
+import java.util.List;
+
 public interface LoanTypeService {
-    int addLoanType(LoanType loanType);
+    void addLoanType(LoanType loanType);
 
     LoanType getLoanTypeById(int loanTypeId);
 
-    int updateLoanType(LoanType loanType);
+    List<LoanType> getAllLoanTypes();
 
-    int deleteLoanType(int loanTypeId);
+    void updateLoanType(LoanType loanType);
+
+    void deleteLoanType(int loanTypeId);
 }

@@ -2,25 +2,18 @@ package com.loanmanagement.service;
 
 import com.loanmanagement.model.LoanApplication;
 
-public interface LoanApplicationService {
+import java.util.List;
 
-    int addApplication(LoanApplication application);
+public interface LoanApplicationService {
+    void addApplication(LoanApplication application);
 
     LoanApplication getApplicationById(int applicationId);
 
-    int updateApplication(LoanApplication application);
+    void updateApplication(LoanApplication application);
+    void approveApplication(int applicationId, int loanOfficerId, String remarks);
+    List<LoanApplication> getAllApplications();
+    void rejectApplication(int applicationId, int loanOfficerId, String remarks);
 
-    int approveApplication(
-            int applicationId,
-            int loanOfficerId,
-            String remarks
-    );
+    void deleteApplication(int applicationId);
 
-    int rejectApplication(
-            int applicationId,
-            int loanOfficerId,
-            String remarks
-    );
-
-    int deleteApplication(int applicationId);
 }

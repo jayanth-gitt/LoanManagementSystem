@@ -1,8 +1,6 @@
 package com.loanmanagement.controller;
 
 import com.loanmanagement.model.Customer;
-import com.loanmanagement.model.CustomerStatus;
-import com.loanmanagement.model.KycStatus;
 import com.loanmanagement.model.Loan;
 import com.loanmanagement.model.LoanApplication;
 import com.loanmanagement.model.User;

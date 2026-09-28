@@ -2,17 +2,36 @@ package com.loanmanagement.service.impl;
 
 import com.loanmanagement.dao.CustomerDao;
 import com.loanmanagement.dao.impl.CustomerDaoImpl;
+import com.loanmanagement.exception.ValidationException;
 import com.loanmanagement.model.Customer;
 import com.loanmanagement.service.CustomerService;
+import com.loanmanagement.util.ValidationUtil;
+
+import java.util.List;
 
 public class CustomerServiceImpl implements CustomerService {
 
-    private final CustomerDao customerDao =
-            new CustomerDaoImpl();
+    private CustomerDao customerDao = new CustomerDaoImpl();
 
     @Override
-    public int addCustomer(Customer customer) {
-        return customerDao.addCustomer(customer);
+    public void addCustomer(Customer customer) {
+        if (customer.getFullName() == null ||
+                customer.getFullName().trim().isEmpty()) {
+            throw new ValidationException(
+                    "Customer name is required");
+        }
+
+        if (!ValidationUtil.isValidEmail(customer.getEmail())) {
+            throw new ValidationException(
+                    "Invalid email format");
+        }
+
+        if (!ValidationUtil.isValidPhone(customer.getPhone())) {
+            throw new ValidationException(
+                    "Invalid phone number");
+        }
+
+        customerDao.addCustomer(customer);
     }
 
     @Override
@@ -21,36 +40,36 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
-    public int updateCustomer(Customer customer) {
-        return customerDao.updateCustomer(customer);
+    public void updateCustomer(Customer customer) {
+        if (customer.getFullName() == null ||
+                customer.getFullName().trim().isEmpty()) {
+            throw new ValidationException(
+                    "Customer name is required");
+        }
+
+        if (!ValidationUtil.isValidEmail(customer.getEmail())) {
+            throw new ValidationException(
+                    "Invalid email format");
+        }
+
+        if (!ValidationUtil.isValidPhone(customer.getPhone())) {
+            throw new ValidationException(
+                    "Invalid phone number");
+        }
+
+        customerDao.updateCustomer(customer);
     }
 
     @Override
-    public int deleteCustomer(int customerId) {
-        return customerDao.deleteCustomer(customerId);
+    public void deleteCustomer(int customerId) {
+        customerDao.deleteCustomer(customerId);
     }
-
     @Override
-    public int verifyKyc(
-            int customerId,
-            int verifiedBy
-    ) {
-        return customerDao.verifyKyc(
-                customerId,
-                verifiedBy
-        );
+    public List<Customer> getAllCustomers() {
+        return customerDao.getAllCustomers();
     }
-
     @Override
-    public int rejectKyc(
-            int customerId,
-            int verifiedBy,
-            String remarks
-    ) {
-        return customerDao.rejectKyc(
-                customerId,
-                verifiedBy,
-                remarks
-        );
+    public Customer getCustomerByUsername(String username) {
+        return customerDao.getCustomerByUsername(username);
     }
 }

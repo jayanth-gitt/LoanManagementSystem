@@ -10,20 +10,6 @@ public class LoanType {
     private int maxTenureMonths;
     private String status;
 
-    public LoanType(int loanTypeId, String name, String description,
-                    double interestRate, double minAmount,
-                    double maxAmount, int maxTenureMonths,
-                    String status) {
-        this.loanTypeId = loanTypeId;
-        this.name = name;
-        this.description = description;
-        this.interestRate = interestRate;
-        this.minAmount = minAmount;
-        this.maxAmount = maxAmount;
-        this.maxTenureMonths = maxTenureMonths;
-        this.status = status;
-    }
-
     public int getLoanTypeId() {
         return loanTypeId;
     }

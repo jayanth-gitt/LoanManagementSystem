@@ -3,272 +3,239 @@ package com.loanmanagement.dao.impl;
 import com.loanmanagement.dao.LoanDao;
 import com.loanmanagement.model.Loan;
 import com.loanmanagement.util.DBConnection;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoanDaoImpl implements LoanDao {
 
     private static final Logger logger =
             LoggerFactory.getLogger(LoanDaoImpl.class);
+    private static final  String statement = "INSERT INTO loans " +
+            "(application_id, customer_id, loan_type_id, principal_amount, " +
+            "interest_rate, tenure_months, total_payable, outstanding_amount, " +
+            "start_date, status, created_by) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String sql = "SELECT * FROM loans WHERE application_id=?";
 
-    public static final String INSERT_LOAN_SQL = """
-            INSERT INTO loans
-            (application_id, customer_id, loan_type_id,
-             principal_amount, interest_rate, tenure_months,
-             emi_amount, start_date, end_date,
-             outstanding_amount, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
 
-    public static final String SELECT_LOAN_BY_ID_SQL = """
-            SELECT *
-            FROM loans
-            WHERE loan_id = ?
-            """;
 
-    public static final String UPDATE_LOAN_SQL = """
-            UPDATE loans
-            SET
-                application_id = ?,
-                customer_id = ?,
-                loan_type_id = ?,
-                principal_amount = ?,
-                interest_rate = ?,
-                tenure_months = ?,
-                emi_amount = ?,
-                start_date = ?,
-                end_date = ?,
-                outstanding_amount = ?,
-                status = ?
-            WHERE loan_id = ?
-            """;
+    private static final  String statement1 = "SELECT * FROM loans WHERE loan_id = ?";
+    private static final  String statement2 = "UPDATE loans SET " +
+            "application_id=?, customer_id=?, loan_type_id=?, " +
+            "principal_amount=?, interest_rate=?, tenure_months=?, " +
+            "total_payable=?, outstanding_amount=?, start_date=?, " +
+            "status=?, created_by=? WHERE loan_id=?";
 
-    public static final String DELETE_LOAN_SQL = """
-            DELETE FROM loans
-            WHERE loan_id = ?
-            """;
-
+    private static final  String statement3= "DELETE FROM loans WHERE loan_id=?";
     @Override
-    public int addLoan(Loan loan) {
+    public void addLoan(Loan loan) {
 
-        logger.info(
-                "Adding loan for application ID: {}",
-                loan.getApplicationId()
-        );
-
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(INSERT_LOAN_SQL)
-        ) {
-
-            preparedStatement.setInt(1, loan.getApplicationId());
-            preparedStatement.setInt(2, loan.getCustomerId());
-            preparedStatement.setInt(3, loan.getLoanTypeId());
-            preparedStatement.setDouble(4, loan.getPrincipalAmount());
-            preparedStatement.setDouble(5, loan.getInterestRate());
-            preparedStatement.setInt(6, loan.getTenureMonths());
-            preparedStatement.setDouble(7, loan.getEmiAmount());
-            preparedStatement.setString(8, loan.getStartDate());
-            preparedStatement.setString(9, loan.getEndDate());
-            preparedStatement.setDouble(10, loan.getOutstandingAmount());
-            preparedStatement.setString(11, loan.getStatus());
-
-            int rowsAffected = preparedStatement.executeUpdate();
-
-            logger.info(
-                    "Loan added successfully. Rows affected: {}",
-                    rowsAffected
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(
+                    statement,
+                    Statement.RETURN_GENERATED_KEYS
             );
+            ps.setInt(1, loan.getApplicationId());
+            ps.setInt(2, loan.getCustomerId());
+            ps.setInt(3, loan.getLoanTypeId());
+            ps.setDouble(4, loan.getPrincipalAmount());
+            ps.setDouble(5, loan.getInterestRate());
+            ps.setInt(6, loan.getTenureMonths());
+            ps.setDouble(7, loan.getTotalPayable());
+            ps.setDouble(8, loan.getOutstandingAmount());
+            ps.setString(9, loan.getStartDate());
+            ps.setString(10, loan.getStatus());
+            ps.setInt(11, loan.getCreatedBy());
 
-            return rowsAffected;
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
 
-        } catch (SQLException e) {
+            if (rs.next()) {
+                loan.setLoanId(rs.getInt(1));
+            }
 
-            logger.error(
-                    "Error while adding loan for application ID: {}",
-                    loan.getApplicationId(),
-                    e
-            );
+            logger.info("Loan added successfully!");
 
-            return 0;
+        } catch (Exception e) {
+            logger.error("error while adding loan", e);
+            throw new RuntimeException("Failed to add loan", e);
         }
     }
+
 
     @Override
     public Loan getLoanById(int loanId) {
 
-        logger.info(
-                "Fetching loan with ID: {}",
-                loanId
-        );
+        try {
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(SELECT_LOAN_BY_ID_SQL)
-        ) {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement1);
 
-            preparedStatement.setInt(1, loanId);
+            ps.setInt(1, loanId);
 
-            try (ResultSet resultSet =
-                         preparedStatement.executeQuery()) {
+            ResultSet rs = ps.executeQuery();
 
-                if (resultSet.next()) {
+            if (rs.next()) {
+                Loan loan = new Loan();
 
-                    Loan loan = new Loan(
-                            resultSet.getInt("loan_id"),
-                            resultSet.getInt("application_id"),
-                            resultSet.getInt("customer_id"),
-                            resultSet.getInt("loan_type_id"),
-                            resultSet.getDouble("principal_amount"),
-                            resultSet.getDouble("interest_rate"),
-                            resultSet.getInt("tenure_months"),
-                            resultSet.getDouble("emi_amount"),
-                            resultSet.getString("start_date"),
-                            resultSet.getString("end_date"),
-                            resultSet.getDouble("outstanding_amount"),
-                            resultSet.getString("status")
-                    );
+                loan.setLoanId(rs.getInt("loan_id"));
+                loan.setApplicationId(rs.getInt("application_id"));
+                loan.setCustomerId(rs.getInt("customer_id"));
+                loan.setLoanTypeId(rs.getInt("loan_type_id"));
+                loan.setPrincipalAmount(rs.getDouble("principal_amount"));
+                loan.setInterestRate(rs.getDouble("interest_rate"));
+                loan.setTenureMonths(rs.getInt("tenure_months"));
+                loan.setTotalPayable(rs.getDouble("total_payable"));
+                loan.setOutstandingAmount(rs.getDouble("outstanding_amount"));
+                loan.setStartDate(rs.getString("start_date"));
+                loan.setStatus(rs.getString("status"));
+                loan.setCreatedBy(rs.getInt("created_by"));
 
-                    logger.info(
-                            "Loan found with ID: {}",
-                            loanId
-                    );
-
-                    return loan;
-                }
+                return loan;
             }
-
-            logger.warn(
-                    "No loan found with ID: {}",
-                    loanId
-            );
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while fetching loan with ID: {}",
-                    loanId,
-                    e
-            );
+        } catch (Exception e) {
+            logger.error("error while getting loan", e);
+            throw new RuntimeException("Failed to get loan", e);
         }
-
         return null;
     }
 
     @Override
-    public int updateLoan(Loan loan) {
+    public void updateLoan(Loan loan) {
 
-        logger.info(
-                "Updating loan with ID: {}",
-                loan.getLoanId()
-        );
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(UPDATE_LOAN_SQL)
-        ) {
 
-            preparedStatement.setInt(1, loan.getApplicationId());
-            preparedStatement.setInt(2, loan.getCustomerId());
-            preparedStatement.setInt(3, loan.getLoanTypeId());
-            preparedStatement.setDouble(4, loan.getPrincipalAmount());
-            preparedStatement.setDouble(5, loan.getInterestRate());
-            preparedStatement.setInt(6, loan.getTenureMonths());
-            preparedStatement.setDouble(7, loan.getEmiAmount());
-            preparedStatement.setString(8, loan.getStartDate());
-            preparedStatement.setString(9, loan.getEndDate());
-            preparedStatement.setDouble(10, loan.getOutstandingAmount());
-            preparedStatement.setString(11, loan.getStatus());
-            preparedStatement.setInt(12, loan.getLoanId());
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement2);
 
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
+            ps.setInt(1, loan.getApplicationId());
+            ps.setInt(2, loan.getCustomerId());
+            ps.setInt(3, loan.getLoanTypeId());
+            ps.setDouble(4, loan.getPrincipalAmount());
+            ps.setDouble(5, loan.getInterestRate());
+            ps.setInt(6, loan.getTenureMonths());
+            ps.setDouble(7, loan.getTotalPayable());
+            ps.setDouble(8, loan.getOutstandingAmount());
+            ps.setString(9, loan.getStartDate());
+            ps.setString(10, loan.getStatus());
+            ps.setInt(11, loan.getCreatedBy());
+            ps.setInt(12, loan.getLoanId());
 
-            if (rowsAffected > 0) {
+            ps.executeUpdate();
 
-                logger.info(
-                        "Loan with ID {} updated successfully. Rows affected: {}",
-                        loan.getLoanId(),
-                        rowsAffected
-                );
+            logger.info("Loan updated successfully!");
 
-            } else {
+        } catch (Exception e) {
+            logger.error("error while updating Loan", e);
+            throw new RuntimeException("Failed to update loan", e);
 
-                logger.warn(
-                        "No loan found to update with ID: {}",
-                        loan.getLoanId()
-                );
-            }
-
-            return rowsAffected;
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while updating loan with ID: {}",
-                    loan.getLoanId(),
-                    e
-            );
-
-            return 0;
         }
     }
 
     @Override
-    public int deleteLoan(int loanId) {
+    public void deleteLoan ( int loanId){
 
-        logger.info(
-                "Deleting loan with ID: {}",
-                loanId
-        );
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(DELETE_LOAN_SQL)
-        ) {
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement3);
 
-            preparedStatement.setInt(1, loanId);
+            ps.setInt(1, loanId);
 
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
+            ps.executeUpdate();
 
-            if (rowsAffected > 0) {
+            logger.info("Loan deleted successfully!");
 
-                logger.info(
-                        "Loan with ID {} deleted successfully. Rows affected: {}",
-                        loanId,
-                        rowsAffected
-                );
-
-            } else {
-
-                logger.warn(
-                        "No loan found to delete with ID: {}",
-                        loanId
-                );
-            }
-
-            return rowsAffected;
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while deleting loan with ID: {}",
-                    loanId,
-                    e
-            );
-
-            return 0;
+        } catch (Exception e) {
+            logger.error("error while deleting Loan", e);
+            throw new RuntimeException("Failed to delete loan", e);
         }
     }
+    @Override
+    public Loan getLoanByApplicationId(int applicationId) {
+        try (Connection con =new DBConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, applicationId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Loan loan = new Loan();
+
+                loan.setLoanId(rs.getInt("loan_id"));
+                loan.setApplicationId(rs.getInt("application_id"));
+                loan.setCustomerId(rs.getInt("customer_id"));
+                loan.setLoanTypeId(rs.getInt("loan_type_id"));
+                loan.setPrincipalAmount(rs.getDouble("principal_amount"));
+                loan.setInterestRate(rs.getDouble("interest_rate"));
+                loan.setTenureMonths(rs.getInt("tenure_months"));
+                loan.setTotalPayable(rs.getDouble("total_payable"));
+                loan.setOutstandingAmount(rs.getDouble("outstanding_amount"));
+                loan.setStartDate(rs.getString("start_date"));
+                loan.setStatus(rs.getString("status"));
+                loan.setCreatedBy(rs.getInt("created_by"));
+
+                return loan;
+            }
+
+        } catch (Exception e) {
+            logger.error("Error while getting loan by application ID", e);
+            throw new RuntimeException("Failed to get loan by application ID", e);
+        }
+        return null;
+    }
+    @Override
+    public List<Loan> getAllLoans() {
+
+        List<Loan> loans = new ArrayList<>();
+
+        String sql = "SELECT * FROM loans";
+
+        try (Connection con = new DBConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Loan loan = new Loan();
+
+                loan.setLoanId(rs.getInt("loan_id"));
+                loan.setApplicationId(rs.getInt("application_id"));
+                loan.setCustomerId(rs.getInt("customer_id"));
+                loan.setLoanTypeId(rs.getInt("loan_type_id"));
+                loan.setPrincipalAmount(rs.getDouble("principal_amount"));
+                loan.setInterestRate(rs.getDouble("interest_rate"));
+                loan.setTenureMonths(rs.getInt("tenure_months"));
+                loan.setTotalPayable(rs.getDouble("total_payable"));
+                loan.setOutstandingAmount(rs.getDouble("outstanding_amount"));
+                loan.setStartDate(rs.getString("start_date"));
+                loan.setStatus(rs.getString("status"));
+                loan.setCreatedBy(rs.getInt("created_by"));
+
+                loans.add(loan);
+            }
+
+            logger.info("All loans retrieved successfully");
+
+        } catch (Exception e) {
+
+            logger.error("Error while retrieving loans", e);
+
+            throw new RuntimeException(
+                    "Failed to retrieve loans", e);
+        }
+
+        return loans;
+    }
 }
+

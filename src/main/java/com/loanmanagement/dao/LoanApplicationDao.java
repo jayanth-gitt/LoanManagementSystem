@@ -2,26 +2,16 @@ package com.loanmanagement.dao;
 
 import com.loanmanagement.model.LoanApplication;
 
-public interface LoanApplicationDao {
+import java.util.List;
 
-    int addLoanApplication(LoanApplication application);
+public interface LoanApplicationDao {
+    void addLoanApplication(LoanApplication application);
 
     LoanApplication getLoanApplicationById(int applicationId);
+    List<LoanApplication> getAllApplications();
 
-    int updateLoanApplication(LoanApplication application);
+    void updateLoanApplication(LoanApplication application);
 
-    int deleteLoanApplication(int applicationId);
-
-    // Application workflow
-    int approveApplication(
-            int applicationId,
-            int reviewedBy,
-            String remarks
-    );
-
-    int rejectApplication(
-            int applicationId,
-            int reviewedBy,
-            String remarks
-    );
+    void deleteLoanApplication(int applicationId);
+    boolean existsByLoanTypeId(int loanTypeId);
 }

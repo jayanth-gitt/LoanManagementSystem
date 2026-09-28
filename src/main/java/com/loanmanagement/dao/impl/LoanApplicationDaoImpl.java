@@ -3,586 +3,229 @@ package com.loanmanagement.dao.impl;
 import com.loanmanagement.dao.LoanApplicationDao;
 import com.loanmanagement.model.LoanApplication;
 import com.loanmanagement.util.DBConnection;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LoanApplicationDaoImpl implements LoanApplicationDao {
-
     private static final Logger logger =
             LoggerFactory.getLogger(LoanApplicationDaoImpl.class);
 
-
-    // ============================================================
-    // SQL CONSTANTS
-    // ============================================================
-
-    public static final String INSERT_LOAN_APPLICATION_SQL = """
-            INSERT INTO loan_applications
-            (
-                customer_id,
-                loan_type_id,
-                requested_amount,
-                tenure_months,
-                purpose,
-                status,
-                remarks,
-                reviewed_by,
-                reviewed_at
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;
+    private static final String statement = "INSERT INTO loan_applications " +
+            "(customer_id, loan_type_id, requested_amount, tenure_months, purpose, status, remarks) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?)";
+    private static final String statement1 = "SELECT * FROM loan_applications WHERE application_id = ?";
+    private static final String statement2 = "UPDATE loan_applications SET " +
+            "customer_id=?, loan_type_id=?, requested_amount=?, " +
+            "tenure_months=?, purpose=?, status=?, remarks=?, " +
+            "reviewed_by=?, reviewed_at=? " +
+            "WHERE application_id=?";
+    private static final String statement3 = "DELETE FROM loan_applications WHERE application_id=?";
+    private static final String sql = "SELECT COUNT(*) FROM loan_applications WHERE loan_type_id=?";
 
 
-    public static final String SELECT_LOAN_APPLICATION_BY_ID_SQL = """
-            SELECT *
-            FROM loan_applications
-            WHERE application_id = ?
-            """;
 
-
-    public static final String UPDATE_LOAN_APPLICATION_SQL = """
-            UPDATE loan_applications
-            SET
-                customer_id = ?,
-                loan_type_id = ?,
-                requested_amount = ?,
-                tenure_months = ?,
-                purpose = ?,
-                status = ?,
-                remarks = ?,
-                reviewed_by = ?,
-                reviewed_at = ?
-            WHERE application_id = ?
-            """;
-
-
-    public static final String DELETE_LOAN_APPLICATION_SQL = """
-            DELETE FROM loan_applications
-            WHERE application_id = ?
-            """;
-
-
-    // ============================================================
-    // APPROVE APPLICATION
-    // ============================================================
-
-    public static final String APPROVE_APPLICATION_SQL = """
-            UPDATE loan_applications
-            SET
-                status = 'APPROVED',
-                remarks = ?,
-                reviewed_by = ?,
-                reviewed_at = NOW()
-            WHERE application_id = ?
-              AND status = 'PENDING'
-            """;
-
-
-    // ============================================================
-    // REJECT APPLICATION
-    // ============================================================
-
-    public static final String REJECT_APPLICATION_SQL = """
-            UPDATE loan_applications
-            SET
-                status = 'REJECTED',
-                remarks = ?,
-                reviewed_by = ?,
-                reviewed_at = NOW()
-            WHERE application_id = ?
-              AND status = 'PENDING'
-            """;
-
-
-    // ============================================================
-    // ADD LOAN APPLICATION
-    // ============================================================
 
     @Override
-    public int addLoanApplication(LoanApplication application) {
+    public void addLoanApplication(LoanApplication application) {
 
-        logger.info(
-                "Adding loan application for customer ID: {}",
-                application.getCustomerId()
-        );
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                INSERT_LOAN_APPLICATION_SQL
-                        )
-        ) {
+        try {
+            Connection con = new DBConnection().getConnection();
 
-            preparedStatement.setInt(
-                    1,
-                    application.getCustomerId()
+            PreparedStatement ps = con.prepareStatement(
+                    statement,
+                    Statement.RETURN_GENERATED_KEYS
             );
+            ps.setInt(1, application.getCustomerId());
+            ps.setInt(2, application.getLoanTypeId());
+            ps.setDouble(3, application.getRequestedAmount());
+            ps.setInt(4, application.getTenureMonths());
+            ps.setString(5, application.getPurpose());
+            ps.setString(6, application.getStatus());
+            ps.setString(7, application.getRemarks());
 
-            preparedStatement.setInt(
-                    2,
-                    application.getLoanTypeId()
-            );
+            ps.executeUpdate();
+            ResultSet rs = ps.getGeneratedKeys();
 
-            preparedStatement.setDouble(
-                    3,
-                    application.getRequestedAmount()
-            );
+            if (rs.next()) {
+                application.setApplicationId(rs.getInt(1));
+            }
 
-            preparedStatement.setInt(
-                    4,
-                    application.getTenureMonths()
-            );
+            logger.info("Loan application added successfully!");
 
-            preparedStatement.setString(
-                    5,
-                    application.getPurpose()
-            );
-
-            preparedStatement.setString(
-                    6,
-                    application.getStatus()
-            );
-
-            preparedStatement.setString(
-                    7,
-                    application.getRemarks()
-            );
-
-            preparedStatement.setInt(
-                    8,
-                    application.getReviewedBy()
-            );
-
-            preparedStatement.setString(
-                    9,
-                    application.getReviewedAt()
-            );
-
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
-
-            logger.info(
-                    "Loan application added successfully. Rows affected: {}",
-                    rowsAffected
-            );
-
-            return rowsAffected;
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while adding loan application",
-                    e
-            );
-
-            return 0;
+        } catch (Exception e) {
+            logger.error("error while adding Loan application", e);
+            throw new RuntimeException("Failed to add loan application", e);
         }
     }
 
-
-    // ============================================================
-    // GET LOAN APPLICATION BY ID
-    // ============================================================
-
     @Override
-    public LoanApplication getLoanApplicationById(
-            int applicationId
-    ) {
+    public LoanApplication getLoanApplicationById(int applicationId) {
 
-        logger.info(
-                "Fetching loan application with ID: {}",
-                applicationId
-        );
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                SELECT_LOAN_APPLICATION_BY_ID_SQL
-                        )
-        ) {
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement1);
 
-            preparedStatement.setInt(
-                    1,
-                    applicationId
-            );
+            ps.setInt(1, applicationId);
 
-            try (
-                    ResultSet resultSet =
-                            preparedStatement.executeQuery()
-            ) {
+            ResultSet rs = ps.executeQuery();
 
-                if (resultSet.next()) {
+            if (rs.next()) {
 
-                    LoanApplication application =
-                            new LoanApplication(
+                LoanApplication application = new LoanApplication();
 
-                                    resultSet.getInt(
-                                            "application_id"
-                                    ),
+                application.setApplicationId(rs.getInt("application_id"));
+                application.setCustomerId(rs.getInt("customer_id"));
+                application.setLoanTypeId(rs.getInt("loan_type_id"));
+                application.setRequestedAmount(rs.getDouble("requested_amount"));
+                application.setTenureMonths(rs.getInt("tenure_months"));
+                application.setPurpose(rs.getString("purpose"));
+                application.setStatus(rs.getString("status"));
+                application.setRemarks(rs.getString("remarks"));
+                application.setReviewedBy(rs.getInt("reviewed_by"));
+                application.setAppliedAt(rs.getString("applied_at"));
+                application.setReviewedAt(rs.getString("reviewed_at"));
 
-                                    resultSet.getInt(
-                                            "customer_id"
-                                    ),
-
-                                    resultSet.getInt(
-                                            "loan_type_id"
-                                    ),
-
-                                    resultSet.getDouble(
-                                            "requested_amount"
-                                    ),
-
-                                    resultSet.getInt(
-                                            "tenure_months"
-                                    ),
-
-                                    resultSet.getString(
-                                            "purpose"
-                                    ),
-
-                                    resultSet.getString(
-                                            "status"
-                                    ),
-
-                                    resultSet.getString(
-                                            "remarks"
-                                    ),
-
-                                    resultSet.getInt(
-                                            "reviewed_by"
-                                    ),
-
-                                    resultSet.getString(
-                                            "applied_at"
-                                    ),
-
-                                    resultSet.getString(
-                                            "reviewed_at"
-                                    )
-                            );
-
-                    logger.info(
-                            "Loan application found with ID: {}",
-                            applicationId
-                    );
-
-                    return application;
-                }
+                return application;
             }
 
-            logger.warn(
-                    "No loan application found with ID: {}",
-                    applicationId
-            );
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while fetching loan application with ID: {}",
-                    applicationId,
-                    e
-            );
+        } catch (Exception e) {
+            logger.error("error while getting loan application ", e);
+            throw new RuntimeException("Failed to get loan application", e);
         }
 
         return null;
     }
 
+    @Override
+    public void updateLoanApplication(LoanApplication application) {
 
-    // ============================================================
-    // UPDATE LOAN APPLICATION
-    // ============================================================
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement2);
+
+            ps.setInt(1, application.getCustomerId());
+            ps.setInt(2, application.getLoanTypeId());
+            ps.setDouble(3, application.getRequestedAmount());
+            ps.setInt(4, application.getTenureMonths());
+            ps.setString(5, application.getPurpose());
+            ps.setString(6, application.getStatus());
+            ps.setString(7, application.getRemarks());
+            ps.setInt(8, application.getReviewedBy());
+            ps.setString(9, application.getReviewedAt());
+            ps.setInt(10, application.getApplicationId());
+
+            ps.executeUpdate();
+
+            logger.info("Loan application updated successfully!");
+
+        } catch (Exception e) {
+            logger.error("error while updating Loan Application", e);
+            throw new RuntimeException("Failed to update loan application", e);
+        }
+
+    }
 
     @Override
-    public int updateLoanApplication(
-            LoanApplication application
-    ) {
+    public void deleteLoanApplication(int applicationId) {
 
-        logger.info(
-                "Updating loan application with ID: {}",
-                application.getApplicationId()
-        );
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                UPDATE_LOAN_APPLICATION_SQL
-                        )
-        ) {
+        try {
+            Connection con = new DBConnection().getConnection();
+            PreparedStatement ps = con.prepareStatement(statement3);
 
-            preparedStatement.setInt(
-                    1,
-                    application.getCustomerId()
-            );
+            ps.setInt(1, applicationId);
 
-            preparedStatement.setInt(
-                    2,
-                    application.getLoanTypeId()
-            );
+            ps.executeUpdate();
 
-            preparedStatement.setDouble(
-                    3,
-                    application.getRequestedAmount()
-            );
+            logger.info("Loan application deleted successfully!");
 
-            preparedStatement.setInt(
-                    4,
-                    application.getTenureMonths()
-            );
+        } catch (Exception e) {
+            logger.error("error while deleting Loan Application", e);
+            throw new RuntimeException("Failed to delete loan application", e);
+        }
+    }
+    @Override
+    public boolean existsByLoanTypeId(int loanTypeId) {
+        try (Connection con = new DBConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
 
-            preparedStatement.setString(
-                    5,
-                    application.getPurpose()
-            );
+            ps.setInt(1, loanTypeId);
 
-            preparedStatement.setString(
-                    6,
-                    application.getStatus()
-            );
+            ResultSet rs = ps.executeQuery();
 
-            preparedStatement.setString(
-                    7,
-                    application.getRemarks()
-            );
-
-            preparedStatement.setInt(
-                    8,
-                    application.getReviewedBy()
-            );
-
-            preparedStatement.setString(
-                    9,
-                    application.getReviewedAt()
-            );
-
-            preparedStatement.setInt(
-                    10,
-                    application.getApplicationId()
-            );
-
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
-
-            if (rowsAffected > 0) {
-
-                logger.info(
-                        "Loan application with ID {} updated successfully. Rows affected: {}",
-                        application.getApplicationId(),
-                        rowsAffected
-                );
-
-            } else {
-
-                logger.warn(
-                        "No loan application found to update with ID: {}",
-                        application.getApplicationId()
-                );
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
             }
 
-            return rowsAffected;
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while updating loan application with ID: {}",
-                    application.getApplicationId(),
-                    e
-            );
-
-            return 0;
+        } catch (Exception e) {
+            logger.error("Error while checking loan type usage", e);
+            throw new RuntimeException("Failed to check loan type usage", e);
         }
+        return false;
     }
-
-
-    // ============================================================
-    // DELETE LOAN APPLICATION
-    // ============================================================
-
     @Override
-    public int deleteLoanApplication(int applicationId) {
+    public List<LoanApplication> getAllApplications() {
 
-        logger.info(
-                "Deleting loan application with ID: {}",
-                applicationId
-        );
+        List<LoanApplication> applications = new ArrayList<>();
 
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                DELETE_LOAN_APPLICATION_SQL
-                        )
-        ) {
+        String sql = "SELECT * FROM loan_applications";
 
-            preparedStatement.setInt(
-                    1,
-                    applicationId
-            );
+        try (Connection con = new DBConnection().getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
+            while (rs.next()) {
 
-            if (rowsAffected > 0) {
+                LoanApplication application = new LoanApplication();
 
-                logger.info(
-                        "Loan application with ID {} deleted successfully. Rows affected: {}",
-                        applicationId,
-                        rowsAffected
-                );
+                application.setApplicationId(
+                        rs.getInt("application_id"));
+                application.setCustomerId(
+                        rs.getInt("customer_id"));
+                application.setLoanTypeId(
+                        rs.getInt("loan_type_id"));
+                application.setRequestedAmount(
+                        rs.getDouble("requested_amount"));
+                application.setTenureMonths(
+                        rs.getInt("tenure_months"));
+                application.setPurpose(
+                        rs.getString("purpose"));
+                application.setStatus(
+                        rs.getString("status"));
+                application.setRemarks(
+                        rs.getString("remarks"));
+                application.setReviewedBy(
+                        rs.getInt("reviewed_by"));
+                application.setAppliedAt(
+                        rs.getString("applied_at"));
+                application.setReviewedAt(
+                        rs.getString("reviewed_at"));
 
-            } else {
-
-                logger.warn(
-                        "No loan application found to delete with ID: {}",
-                        applicationId
-                );
+                applications.add(application);
             }
 
-            return rowsAffected;
+            logger.info("All loan applications retrieved successfully");
 
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while deleting loan application with ID: {}",
-                    applicationId,
-                    e
-            );
-
-            return 0;
-        }
-    }
-
-
-    // ============================================================
-    // APPROVE APPLICATION
-    // ============================================================
-
-    @Override
-    public int approveApplication(
-            int applicationId,
-            int reviewedBy,
-            String remarks
-    ) {
-
-        logger.info(
-                "Approving loan application ID: {} by user ID: {}",
-                applicationId,
-                reviewedBy
-        );
-
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                APPROVE_APPLICATION_SQL
-                        )
-        ) {
-
-            preparedStatement.setString(
-                    1,
-                    remarks
-            );
-
-            preparedStatement.setInt(
-                    2,
-                    reviewedBy
-            );
-
-            preparedStatement.setInt(
-                    3,
-                    applicationId
-            );
-
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
-
-            logger.info(
-                    "Loan application approval completed. Rows affected: {}",
-                    rowsAffected
-            );
-
-            return rowsAffected;
-
-        } catch (SQLException e) {
+        } catch (Exception e) {
 
             logger.error(
-                    "Error while approving loan application ID: {}",
-                    applicationId,
-                    e
-            );
+                    "Error while retrieving loan applications", e);
 
-            return 0;
+            throw new RuntimeException(
+                    "Failed to retrieve loan applications", e);
         }
+
+        return applications;
     }
 
-
-    // ============================================================
-    // REJECT APPLICATION
-    // ============================================================
-
-    @Override
-    public int rejectApplication(
-            int applicationId,
-            int reviewedBy,
-            String remarks
-    ) {
-
-        logger.info(
-                "Rejecting loan application ID: {} by user ID: {}",
-                applicationId,
-                reviewedBy
-        );
-
-        try (
-                Connection connection = DBConnection.getConnection();
-                PreparedStatement preparedStatement =
-                        connection.prepareStatement(
-                                REJECT_APPLICATION_SQL
-                        )
-        ) {
-
-            preparedStatement.setString(
-                    1,
-                    remarks
-            );
-
-            preparedStatement.setInt(
-                    2,
-                    reviewedBy
-            );
-
-            preparedStatement.setInt(
-                    3,
-                    applicationId
-            );
-
-            int rowsAffected =
-                    preparedStatement.executeUpdate();
-
-            logger.info(
-                    "Loan application rejection completed. Rows affected: {}",
-                    rowsAffected
-            );
-
-            return rowsAffected;
-
-        } catch (SQLException e) {
-
-            logger.error(
-                    "Error while rejecting loan application ID: {}",
-                    applicationId,
-                    e
-            );
-
-            return 0;
-        }
-    }
 }
+

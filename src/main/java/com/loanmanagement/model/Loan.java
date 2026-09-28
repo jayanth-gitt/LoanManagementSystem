@@ -8,29 +8,11 @@ public class Loan {
     private double principalAmount;
     private double interestRate;
     private int tenureMonths;
-    private double emiAmount;
-    private String startDate;
-    private String endDate;
+    private double totalPayable;
     private double outstandingAmount;
+    private String startDate;
     private String status;
-
-    public Loan(int loanId, int applicationId, int customerId, int loanTypeId,
-                double principalAmount, double interestRate, int tenureMonths,
-                double emiAmount, String startDate, String endDate,
-                double outstandingAmount, String status) {
-        this.loanId = loanId;
-        this.applicationId = applicationId;
-        this.customerId = customerId;
-        this.loanTypeId = loanTypeId;
-        this.principalAmount = principalAmount;
-        this.interestRate = interestRate;
-        this.tenureMonths = tenureMonths;
-        this.emiAmount = emiAmount;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.outstandingAmount = outstandingAmount;
-        this.status = status;
-    }
+    private int createdBy;
 
     public int getLoanId() {
         return loanId;
@@ -88,28 +70,12 @@ public class Loan {
         this.tenureMonths = tenureMonths;
     }
 
-    public double getEmiAmount() {
-        return emiAmount;
+    public double getTotalPayable() {
+        return totalPayable;
     }
 
-    public void setEmiAmount(double emiAmount) {
-        this.emiAmount = emiAmount;
-    }
-
-    public String getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
-    public String getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
+    public void setTotalPayable(double totalPayable) {
+        this.totalPayable = totalPayable;
     }
 
     public double getOutstandingAmount() {
@@ -120,11 +86,27 @@ public class Loan {
         this.outstandingAmount = outstandingAmount;
     }
 
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
     public String getStatus() {
         return status;
     }
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public int getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(int createdBy) {
+        this.createdBy = createdBy;
     }
 }

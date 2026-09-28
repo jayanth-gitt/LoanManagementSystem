@@ -1,27 +1,45 @@
 package com.loanmanagement.util;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.Properties;
 
 public class DBConnection {
-    private static final String URL="jdbc:mysql://localhost:3306/loan_management";
-    private static final String USER="root";
-    private static final String PASSWORD=System.getenv("DB_PASSWORD");
-    public static Connection getConnection() throws SQLException{
-        return DriverManager.getConnection(URL,USER,PASSWORD);
-    }
-    public static void main(String[] args) {
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(DBConnection.class);
+
+    Connection con = null;
+
+    public Connection getConnection() {
 
         try {
-            Connection connection = getConnection();
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Properties properties = new Properties();
 
-            System.out.println("Database connected successfully!");
+            InputStream input =
+                    getClass().getClassLoader().getResourceAsStream("db.properties");
+            if (input == null) {
+                throw new RuntimeException("db.properties file not found");
+            }
+            properties.load(input);
 
-            connection.close();
+            String url = properties.getProperty("db.url");
+            String username = properties.getProperty("db.username");
+            String password = properties.getProperty("db.password");
 
-        } catch (SQLException e) {
-            System.out.println("Database connection failed!");
-            e.printStackTrace();
+            con = DriverManager.getConnection(url, username, password);
+            logger.info("Database connection established successfully");
+
+        } catch (Exception e) {
+            logger.error("Error while connecting to database", e);
+            throw new RuntimeException("Failed to connect to database", e);
         }
+
+        return con;
     }
 }

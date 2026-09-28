@@ -13,24 +13,6 @@ public class LoanApplication {
     private String appliedAt;
     private String reviewedAt;
 
-    public LoanApplication(int applicationId, int customerId, int loanTypeId,
-                           double requestedAmount, int tenureMonths, String purpose,
-                           String status, String remarks, int reviewedBy, String appliedAt,
-                           String reviewedAt)
-    {
-        this.applicationId = applicationId;
-        this.customerId = customerId;
-        this.loanTypeId = loanTypeId;
-        this.requestedAmount = requestedAmount;
-        this.tenureMonths = tenureMonths;
-        this.purpose = purpose;
-        this.status = status;
-        this.remarks = remarks;
-        this.reviewedBy = reviewedBy;
-        this.appliedAt = appliedAt;
-        this.reviewedAt = reviewedAt;
-    }
-
     public int getApplicationId() {
         return applicationId;
     }
